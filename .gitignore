@@ -1,1 +1,18 @@
-./ai-dev-tasks/**
+# AI Development Tasks
+ai-dev-tasks/
+
+# Lua
+*.lua~
+*.swp
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Editor Files
+.vscode/
+.idea/
+*.sublime-*
+
+# Testing
+.plenary/
