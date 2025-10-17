@@ -1,5 +1,5 @@
 -- lua/mrreviewer/ui.lua
--- Selection interfaces and user prompts
+-- Selection interfaces and user prompts using Telescope
 
 local M = {}
 local utils = require('mrreviewer.utils')
@@ -50,7 +50,7 @@ function M.format_mr_entry(mr, include_metadata)
   return formatted
 end
 
---- Display MR selection UI
+--- Display MR selection UI using Telescope
 --- @param mrs table List of MRs
 --- @param callback function Callback function(selected_mr, index)
 function M.select_mr(mrs, callback)
@@ -59,23 +59,60 @@ function M.select_mr(mrs, callback)
     return
   end
 
-  -- Format MRs for display
-  local items = {}
-  for _, mr in ipairs(mrs) do
-    table.insert(items, M.format_mr_entry(mr, false))
+  -- Check if Telescope is available
+  local has_telescope, pickers = pcall(require, 'telescope.pickers')
+  if not has_telescope then
+    -- Fallback to vim.ui.select if Telescope is not available
+    local items = {}
+    for _, mr in ipairs(mrs) do
+      table.insert(items, M.format_mr_entry(mr, false))
+    end
+
+    vim.ui.select(items, {
+      prompt = 'Select MR to review:',
+      format_item = function(item)
+        return item
+      end,
+    }, function(choice, idx)
+      if choice and idx then
+        callback(mrs[idx], idx)
+      end
+    end)
+    return
   end
 
-  -- Display selection UI
-  vim.ui.select(items, {
-    prompt = 'Select MR to review:',
-    format_item = function(item)
-      return item
-    end,
-  }, function(choice, idx)
-    if choice and idx then
-      callback(mrs[idx], idx)
-    end
-  end)
+  -- Use Telescope picker
+  local finders = require('telescope.finders')
+  local conf = require('telescope.config').values
+  local actions = require('telescope.actions')
+  local action_state = require('telescope.actions.state')
+
+  pickers
+    .new({}, {
+      prompt_title = 'Merge Requests',
+      finder = finders.new_table({
+        results = mrs,
+        entry_maker = function(mr)
+          return {
+            value = mr,
+            display = M.format_mr_entry(mr, true),
+            ordinal = string.format('!%d %s %s', mr.iid, mr.title, mr.author.username),
+          }
+        end,
+      }),
+      sorter = conf.generic_sorter({}),
+      attach_mappings = function(prompt_bufnr, map)
+        actions.select_default:replace(function()
+          local selection = action_state.get_selected_entry()
+          actions.close(prompt_bufnr)
+          if selection then
+            callback(selection.value, selection.index)
+          end
+        end)
+        return true
+      end,
+    })
+    :find()
 end
 
 --- Display a floating window with text content

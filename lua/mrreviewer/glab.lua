@@ -1,8 +1,9 @@
 -- lua/mrreviewer/glab.lua
--- Wrapper for glab CLI tool with async execution
+-- Wrapper for glab CLI tool with async execution using plenary.job
 
 local M = {}
 local utils = require('mrreviewer.utils')
+local Job = require('plenary.job')
 
 --- Execute a glab command asynchronously
 --- @param args table Command arguments (e.g., {'mr', 'list', '--output', 'json'})
@@ -13,90 +14,26 @@ function M.execute_async(args, callback, timeout)
   local glab_path = config.get_value('glab.path') or 'glab'
   timeout = timeout or config.get_value('glab.timeout') or 30000
 
-  local stdout_chunks = {}
-  local stderr_chunks = {}
+  local job = Job:new({
+    command = glab_path,
+    args = args,
+    on_exit = vim.schedule_wrap(function(j, exit_code)
+      local stdout = table.concat(j:result(), '\n')
+      local stderr = table.concat(j:stderr_result(), '\n')
+      callback(exit_code, stdout, stderr)
+    end),
+  })
 
-  -- Create stdout pipe
-  local stdout = vim.loop.new_pipe(false)
-  local stderr = vim.loop.new_pipe(false)
-
-  -- Timer for timeout
-  local timer = vim.loop.new_timer()
-  local timed_out = false
-
-  local handle
-  handle = vim.loop.spawn(
-    glab_path,
-    {
-      args = args,
-      stdio = { nil, stdout, stderr },
-    },
-    vim.schedule_wrap(function(exit_code, signal)
-      -- Stop timer
-      if timer then
-        timer:stop()
-        timer:close()
-      end
-
-      -- Close pipes
-      if stdout then
-        stdout:close()
-      end
-      if stderr then
-        stderr:close()
-      end
-
-      -- Handle timeout
-      if timed_out then
-        callback(1, '', 'Command timed out after ' .. timeout .. 'ms')
-        return
-      end
-
-      -- Combine output chunks
-      local stdout_str = table.concat(stdout_chunks, '')
-      local stderr_str = table.concat(stderr_chunks, '')
-
-      callback(exit_code, stdout_str, stderr_str)
-    end)
-  )
-
-  if not handle then
-    callback(1, '', 'Failed to spawn glab process')
-    return
-  end
+  job:start()
 
   -- Set up timeout
-  timer:start(timeout, 0, function()
-    timed_out = true
-    if handle then
-      handle:kill(15) -- SIGTERM
-    end
-  end)
-
-  -- Read stdout
-  if stdout then
-    stdout:read_start(function(err, data)
-      if err then
-        utils.notify('Error reading glab stdout: ' .. err, 'error')
-        return
+  if timeout and timeout > 0 then
+    vim.defer_fn(function()
+      if job and not job.is_shutdown then
+        job:shutdown()
+        callback(1, '', 'Command timed out after ' .. timeout .. 'ms')
       end
-      if data then
-        table.insert(stdout_chunks, data)
-      end
-    end)
-  end
-
-  -- Read stderr
-  if stderr then
-    stderr:read_start(function(err, data)
-      if err then
-        utils.notify('Error reading glab stderr: ' .. err, 'error')
-        return
-      end
-      if data then
-        table.insert(stderr_chunks, data)
-      end
-    end)
+    end, timeout)
   end
 end
 
@@ -109,23 +46,19 @@ function M.execute_sync(args, timeout)
   local glab_path = config.get_value('glab.path') or 'glab'
   timeout = timeout or config.get_value('glab.timeout') or 30000
 
-  -- Build command
-  local cmd = glab_path .. ' ' .. table.concat(args, ' ')
+  local job = Job:new({
+    command = glab_path,
+    args = args,
+  })
 
-  -- Execute with timeout
-  local handle = io.popen(cmd .. ' 2>&1')
-  if not handle then
-    return 1, '', 'Failed to execute command'
-  end
+  -- Start job and wait for completion
+  job:sync(timeout)
 
-  local output = handle:read('*a')
-  local success, exit_type, exit_code = handle:close()
+  local stdout = table.concat(job:result(), '\n')
+  local stderr = table.concat(job:stderr_result(), '\n')
+  local exit_code = job.code or 0
 
-  if not success then
-    return exit_code or 1, output, 'Command failed'
-  end
-
-  return 0, output, ''
+  return exit_code, stdout, stderr
 end
 
 --- Check if glab is installed and authenticated
