@@ -2,13 +2,18 @@
 -- Main module initialization and public API
 
 local M = {}
+local state_module = require('mrreviewer.state')
 
--- Store plugin state
-M.state = {
-  initialized = false,
-  current_mr = nil,
-  current_diff_buffers = {},
-}
+-- Expose state dynamically for backward compatibility
+-- This ensures code accessing mrreviewer.state.current_mr gets the latest value
+setmetatable(M, {
+  __index = function(t, key)
+    if key == 'state' then
+      return state_module.get_session()
+    end
+    return rawget(t, key)
+  end,
+})
 
 --- Setup function to initialize the plugin with user configuration
 --- @param opts table|nil User configuration options
@@ -23,25 +28,24 @@ function M.setup(opts)
   local highlights = require('mrreviewer.highlights')
   highlights.setup()
 
-  M.state.initialized = true
+  state_module.set_initialized(true)
 end
 
 --- Get the current plugin state
 --- @return table Current state
 function M.get_state()
-  return M.state
+  return state_module.get_session()
 end
 
 --- Check if plugin is initialized
 --- @return boolean
 function M.is_initialized()
-  return M.state.initialized
+  return state_module.is_initialized()
 end
 
 --- Clear current MR state
 function M.clear_state()
-  M.state.current_mr = nil
-  M.state.current_diff_buffers = {}
+  state_module.clear_session()
 end
 
 return M

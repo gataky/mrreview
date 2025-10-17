@@ -7,16 +7,17 @@ local parsers = require('mrreviewer.parsers')
 local highlights = require('mrreviewer.highlights')
 local position = require('mrreviewer.position')
 local formatting = require('mrreviewer.comments.formatting')
+local state_module = require('mrreviewer.state')
 
--- State for comment display
-M.state = {
-  comment_buffer = nil,
-  comment_window = nil,
-  comment_float_win = nil,
-  comment_float_buf = nil,
-  displayed_comments = {},
-  namespace_id = vim.api.nvim_create_namespace('mrreviewer_comments'),
-}
+-- Expose comments state dynamically for backward compatibility
+setmetatable(M, {
+  __index = function(t, key)
+    if key == 'state' then
+      return state_module.get_comments()
+    end
+    return rawget(t, key)
+  end,
+})
 
 --- Filter comments by file path
 --- @param comments table List of all comments
@@ -91,9 +92,10 @@ function M.display_split(comments, buffer)
   vim.wo[comment_win].relativenumber = false
 
   -- Store state
-  M.state.comment_buffer = comment_buf
-  M.state.comment_window = comment_win
-  M.state.displayed_comments = sorted_comments
+  local comments_state = state_module.get_comments()
+  comments_state.comment_buffer = comment_buf
+  comments_state.comment_window = comment_win
+  comments_state.displayed_comments = sorted_comments
 
   -- Return focus to diff buffer
   vim.cmd('wincmd p')
@@ -112,7 +114,8 @@ function M.display_virtual_text(comments, buffer)
 
   -- Sort comments by line
   local sorted_comments = parsers.sort_comments_by_line(comments)
-  M.state.displayed_comments = sorted_comments
+  local comments_state = state_module.get_comments()
+  comments_state.displayed_comments = sorted_comments
 
   for _, comment in ipairs(sorted_comments) do
     local line_num = M.map_to_line(comment, buffer)
@@ -150,7 +153,8 @@ function M.display_float(comments, buffer)
 
   -- Sort comments by line
   local sorted_comments = parsers.sort_comments_by_line(comments)
-  M.state.displayed_comments = sorted_comments
+  local comments_state = state_module.get_comments()
+  comments_state.displayed_comments = sorted_comments
 
   -- No need to show anything initially - float will appear on demand
 end
@@ -238,8 +242,9 @@ function M.show_float_for_current_line()
   local float_win = vim.api.nvim_open_win(float_buf, false, opts)
 
   -- Store float window
-  M.state.comment_float_win = float_win
-  M.state.comment_float_buf = float_buf
+  local comments_state = state_module.get_comments()
+  comments_state.comment_float_win = float_win
+  comments_state.comment_float_buf = float_buf
 
   -- Set window options
   vim.wo[float_win].wrap = true
@@ -247,10 +252,11 @@ function M.show_float_for_current_line()
 
   -- Close float function
   local close_float = function()
-    if M.state.comment_float_win and vim.api.nvim_win_is_valid(M.state.comment_float_win) then
-      vim.api.nvim_win_close(M.state.comment_float_win, true)
-      M.state.comment_float_win = nil
-      M.state.comment_float_buf = nil
+    local comments_state = state_module.get_comments()
+    if comments_state.comment_float_win and vim.api.nvim_win_is_valid(comments_state.comment_float_win) then
+      vim.api.nvim_win_close(comments_state.comment_float_win, true)
+      comments_state.comment_float_win = nil
+      comments_state.comment_float_buf = nil
     end
   end
 
@@ -442,30 +448,28 @@ end
 
 --- Clear all comment displays
 function M.clear()
+  local comments_state = state_module.get_comments()
+
   -- Close comment window
-  if M.state.comment_window and vim.api.nvim_win_is_valid(M.state.comment_window) then
-    vim.api.nvim_win_close(M.state.comment_window, true)
+  if comments_state.comment_window and vim.api.nvim_win_is_valid(comments_state.comment_window) then
+    vim.api.nvim_win_close(comments_state.comment_window, true)
   end
 
   -- Close float window
-  if M.state.comment_float_win and vim.api.nvim_win_is_valid(M.state.comment_float_win) then
-    vim.api.nvim_win_close(M.state.comment_float_win, true)
+  if comments_state.comment_float_win and vim.api.nvim_win_is_valid(comments_state.comment_float_win) then
+    vim.api.nvim_win_close(comments_state.comment_float_win, true)
   end
 
   -- Clear virtual text from all buffers
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
     if vim.api.nvim_buf_is_valid(buf) then
-      vim.api.nvim_buf_clear_namespace(buf, M.state.namespace_id, 0, -1)
+      vim.api.nvim_buf_clear_namespace(buf, comments_state.namespace_id, 0, -1)
       vim.fn.sign_unplace('MRReviewerComments', { buffer = buf })
     end
   end
 
-  -- Clear state
-  M.state.comment_buffer = nil
-  M.state.comment_window = nil
-  M.state.comment_float_win = nil
-  M.state.comment_float_buf = nil
-  M.state.displayed_comments = {}
+  -- Clear state using centralized method
+  state_module.clear_comments()
 end
 
 return M

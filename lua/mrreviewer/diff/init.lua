@@ -2,14 +2,17 @@
 -- Diff view creation, layout, and buffer management
 
 local M = {}
+local state_module = require('mrreviewer.state')
 
--- Store current diff view state
-M.state = {
-  buffers = {},
-  windows = {},
-  current_file_index = 1,
-  files = {},
-}
+-- Expose diff state dynamically for backward compatibility
+setmetatable(M, {
+  __index = function(t, key)
+    if key == 'state' then
+      return state_module.get_diff()
+    end
+    return rawget(t, key)
+  end,
+})
 
 -- Load submodules
 local view = require('mrreviewer.diff.view')
@@ -77,8 +80,10 @@ function M.open(mr_data)
     return
   end
 
-  M.state.files = files
-  M.state.current_file_index = 1
+  -- Update diff state through state module
+  local diff_state = state_module.get_diff()
+  diff_state.files = files
+  diff_state.current_file_index = 1
 
   -- Open first file
   M.open_file_diff(mr_data, files[1])
