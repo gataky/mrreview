@@ -5,10 +5,11 @@
 
 ## Priority 1: Critical Issues (Must Fix)
 
-### 1.1 Replace Deprecated Neovim APIs
+### 1.1 Replace Deprecated Neovim APIs ✅ COMPLETE
 **Files:** `lua/mrreviewer/diff.lua`, `lua/mrreviewer/comments.lua`, `lua/mrreviewer/ui.lua`
 **Estimated effort:** 2-3 hours
 **Breaking changes:** None (backward compatible)
+**Completed:** 2025-01-17
 
 - [x] Replace all `vim.api.nvim_buf_set_option(buf, 'option', value)`
   - With: `vim.bo[buf].option = value`
