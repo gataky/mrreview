@@ -77,17 +77,17 @@ Generated from: `0001-prd-mr-review-plugin.md`
   - [x] 3.8 Implement current branch detection using git commands
   - [x] 3.9 Add loading indicators and status messages during MR fetching
 
-- [ ] 4.0 **Diff View System**
-  - [ ] 4.1 Create `lua/mrreviewer/diff.lua` module for diff view management
-  - [ ] 4.2 Implement `diff.get_changed_files()` to extract file list from MR data
-  - [ ] 4.3 Implement `diff.fetch_file_versions()` to get target and source branch versions using git show
-  - [ ] 4.4 Create `diff.create_side_by_side_layout()` to set up vsplit with two buffers
-  - [ ] 4.5 Implement buffer population with target (left) and source (right) file contents
-  - [ ] 4.6 Apply diff highlighting using `vim.diff()` and extmarks/highlights
-  - [ ] 4.7 Set buffer options (readonly, buftype=nofile, filetype for syntax highlighting)
-  - [ ] 4.8 Implement file navigation keymaps (next file, previous file, file list)
-  - [ ] 4.9 Create `diff.close()` function to clean up buffers and windows
-  - [ ] 4.10 Add scrollbind/cursorbind for synchronized scrolling between buffers
+- [x] 4.0 **Diff View System**
+  - [x] 4.1 Create `lua/mrreviewer/diff.lua` module for diff view management
+  - [x] 4.2 Implement `diff.get_changed_files()` to extract file list from MR data
+  - [x] 4.3 Implement `diff.fetch_file_versions()` to get target and source branch versions using git show
+  - [x] 4.4 Create `diff.create_side_by_side_layout()` to set up vsplit with two buffers
+  - [x] 4.5 Implement buffer population with target (left) and source (right) file contents
+  - [x] 4.6 Apply diff highlighting using `vim.diff()` and extmarks/highlights
+  - [x] 4.7 Set buffer options (readonly, buftype=nofile, filetype for syntax highlighting)
+  - [x] 4.8 Implement file navigation keymaps (next file, previous file, file list)
+  - [x] 4.9 Create `diff.close()` function to clean up buffers and windows
+  - [x] 4.10 Add scrollbind/cursorbind for synchronized scrolling between buffers
 
 - [ ] 5.0 **Comment Fetching and Display System**
   - [ ] 5.1 Create `lua/mrreviewer/comments.lua` module for comment handling

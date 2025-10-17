@@ -7,6 +7,7 @@ local parsers = require('mrreviewer.parsers')
 local project = require('mrreviewer.project')
 local utils = require('mrreviewer.utils')
 local ui = require('mrreviewer.ui')
+local diff = require('mrreviewer.diff')
 
 --- Check prerequisites before running commands
 --- @return boolean, string|nil Returns true if ready, or false and error message
@@ -180,8 +181,8 @@ function M.review(mr_number)
       'info'
     )
 
-    -- TODO: Open diff view (will be implemented in task 4.0)
-    utils.notify('Diff view not yet implemented. MR data stored in state.', 'warn')
+    -- Open diff view
+    diff.open(mr_data)
   end)
 end
 
