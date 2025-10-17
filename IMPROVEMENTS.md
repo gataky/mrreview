@@ -22,10 +22,11 @@
 - `lua/mrreviewer/comments.lua`: Lines 112-114, 133-134, 289-290
 - `lua/mrreviewer/ui.lua`: Lines 128-129, 156-157
 
-### 1.2 Refactor Shell Commands to Use plenary.job
-**Files:** `lua/mrreviewer/utils.lua`, `lua/mrreviewer/project.lua`, `lua/mrreviewer/glab.lua`
+### 1.2 Refactor Shell Commands to Use plenary.job ✅ COMPLETE
+**Files:** `lua/mrreviewer/utils.lua`, `lua/mrreviewer/project.lua`, `lua/mrreviewer/glab.lua`, `lua/mrreviewer/git.lua` (new)
 **Estimated effort:** 4-6 hours
 **Breaking changes:** None (internal refactor)
+**Completed:** 2025-01-17
 
 - [x] Create `lua/mrreviewer/git.lua` module with Job-based helpers
   - [x] `git.get_current_branch()`
@@ -295,13 +296,16 @@ lua/mrreviewer/comments/
 
 ## Tracking Progress
 
-- [ ] Phase 1 Complete (0/3 tasks)
+- [ ] Phase 1 Complete (2/3 tasks) - IN PROGRESS
+  - [x] 1.1 Replace Deprecated APIs
+  - [x] 1.2 Refactor Shell Commands
+  - [ ] 1.3 Add Test Coverage
 - [ ] Phase 2 Complete (0/4 tasks)
 - [ ] Phase 3 Complete (0/4 tasks)
 - [ ] Phase 4 Complete (0/3 tasks)
 - [ ] Phase 5 Complete (0/1 tasks)
 
-**Overall Progress:** 0/15 major tasks complete
+**Overall Progress:** 2/15 major tasks complete (13%)
 
 ---
 
