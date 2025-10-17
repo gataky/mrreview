@@ -4,8 +4,8 @@
 
 local M = {}
 local Job = require('plenary.job')
-local errors = require('mrreviewer.errors')
-local logger = require('mrreviewer.logger')
+local errors = require('mrreviewer.core.errors')
+local logger = require('mrreviewer.core.logger')
 
 --- Execute a git command synchronously
 --- @param args table Git command arguments (e.g., {'rev-parse', '--abbrev-ref', 'HEAD'})

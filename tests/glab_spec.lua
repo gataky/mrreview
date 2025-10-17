@@ -2,7 +2,7 @@
 -- Tests for glab CLI wrapper module
 
 describe('glab', function()
-  local glab = require('mrreviewer.glab')
+  local glab = require('mrreviewer.integrations.glab')
 
   describe('build_mr_list_args', function()
     it('builds args for opened MRs (default)', function()
@@ -137,7 +137,7 @@ describe('glab', function()
 
     it('executes a simple command successfully', function()
       -- Use git command which we know exists
-      local config = require('mrreviewer.config')
+      local config = require('mrreviewer.core.config')
       -- Temporarily override glab path to use git for testing
       local original_get_value = config.get_value
       config.get_value = function(key)
@@ -161,7 +161,7 @@ describe('glab', function()
     end)
 
     it('handles failed commands', function()
-      local config = require('mrreviewer.config')
+      local config = require('mrreviewer.core.config')
       local original_get_value = config.get_value
       config.get_value = function(key)
         if key == 'glab.path' then
@@ -183,7 +183,7 @@ describe('glab', function()
 
   describe('execute_async', function()
     it('executes command asynchronously', function()
-      local config = require('mrreviewer.config')
+      local config = require('mrreviewer.core.config')
       local original_get_value = config.get_value
       config.get_value = function(key)
         if key == 'glab.path' then

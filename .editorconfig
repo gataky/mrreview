@@ -21,7 +21,7 @@ max_line_length = 100
 [*.md]
 indent_style = space
 indent_size = 4
-trim_trailing_whitespace = false  # Preserve trailing spaces for line breaks
+# trim_trailing_whitespace = false  # Preserve trailing spaces for line breaks
 
 # YAML files
 [*.{yml,yaml}]

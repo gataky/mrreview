@@ -7,7 +7,7 @@ describe('state', function()
   before_each(function()
     -- Fresh require to reset state
     package.loaded['mrreviewer.state'] = nil
-    state = require('mrreviewer.state')
+    state = require('mrreviewer.core.state')
     state.reset()
   end)
 

@@ -23,7 +23,7 @@ function M.setup(opts)
 
     -- Store original if not already stored
     if not M._original then
-        M._original = require('mrreviewer.git')
+        M._original = require('mrreviewer.integrations.git')
     end
 
     -- Merge options into state
@@ -37,7 +37,7 @@ function M.setup(opts)
         if M.state.current_branch then
             return M.state.current_branch, nil
         else
-            local errors = require('mrreviewer.errors')
+            local errors = require('mrreviewer.core.errors')
             return nil, errors.git_error('Not in a git repository')
         end
     end
@@ -52,7 +52,7 @@ function M.setup(opts)
         if M.state.repo_root then
             return M.state.repo_root, nil
         else
-            local errors = require('mrreviewer.errors')
+            local errors = require('mrreviewer.core.errors')
             return nil, errors.git_error('Not in a git repository')
         end
     end
@@ -63,7 +63,7 @@ function M.setup(opts)
         if M.state.remote_url then
             return M.state.remote_url, nil
         else
-            local errors = require('mrreviewer.errors')
+            local errors = require('mrreviewer.core.errors')
             return nil, errors.git_error('Remote not found: ' .. remote_name)
         end
     end

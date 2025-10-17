@@ -7,7 +7,7 @@ describe('comments', function()
   before_each(function()
     -- Clear module cache to get fresh instance
     package.loaded['mrreviewer.comments'] = nil
-    comments = require('mrreviewer.comments')
+    comments = require('mrreviewer.ui.comments')
   end)
 
   describe('filter_by_file', function()
@@ -211,7 +211,7 @@ describe('comments', function()
       local ns1 = comments.state.namespace_id
       -- Reload module
       package.loaded['mrreviewer.comments'] = nil
-      comments = require('mrreviewer.comments')
+      comments = require('mrreviewer.ui.comments')
       local ns2 = comments.state.namespace_id
 
       -- Namespace IDs should be different across reloads

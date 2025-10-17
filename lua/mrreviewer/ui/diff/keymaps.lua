@@ -7,8 +7,8 @@ local M = {}
 --- @param state table Diff state with buffers
 --- @param nav table Navigation module with next_file, prev_file functions
 function M.setup(state, nav)
-  local config = require('mrreviewer.config')
-  local comments = require('mrreviewer.comments')
+  local config = require('mrreviewer.core.config')
+  local comments = require('mrreviewer.ui.comments')
   local keymaps = config.get_value('keymaps')
 
   if not keymaps then
@@ -69,7 +69,7 @@ function M.setup(state, nav)
 
       vim.api.nvim_buf_set_keymap(buf, 'n', keymaps.list_comments or '<leader>cl', '', {
         callback = function()
-          require('mrreviewer.commands').list_comments()
+          require('mrreviewer.api.commands').list_comments()
         end,
         noremap = true,
         silent = true,

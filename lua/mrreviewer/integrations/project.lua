@@ -2,14 +2,14 @@
 -- Git/GitLab project detection and metadata
 
 local M = {}
-local utils = require('mrreviewer.utils')
-local errors = require('mrreviewer.errors')
+local utils = require('mrreviewer.lib.utils')
+local errors = require('mrreviewer.core.errors')
 
 --- Get git remote URL
 --- @param remote_name string|nil Remote name (default: 'origin')
 --- @return string|nil, table|nil Remote URL or nil, and error object or nil
 function M.get_remote_url(remote_name)
-  local git = require('mrreviewer.git')
+  local git = require('mrreviewer.integrations.git')
   return git.get_remote_url(remote_name)
 end
 
@@ -112,7 +112,7 @@ end
 --- Tries to detect from current buffer's file path first, then falls back to cwd
 --- @return string|nil, table|nil Root directory path or nil, and error object or nil
 function M.get_repo_root()
-  local git = require('mrreviewer.git')
+  local git = require('mrreviewer.integrations.git')
 
   -- First try to get repo root from current buffer's file path
   local current_file = vim.api.nvim_buf_get_name(0)
@@ -143,7 +143,7 @@ end
 --- This attempts to detect the target branch from git tracking info
 --- @return string|nil Target branch name or nil (defaults to 'main')
 function M.get_target_branch()
-  local git = require('mrreviewer.git')
+  local git = require('mrreviewer.integrations.git')
 
   -- Try to get upstream tracking branch
   local upstream = git.get_upstream_branch()

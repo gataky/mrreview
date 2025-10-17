@@ -2,7 +2,7 @@
 -- Diff view creation, layout, and buffer management
 
 local M = {}
-local state_module = require('mrreviewer.state')
+local state_module = require('mrreviewer.core.state')
 
 -- Expose diff state dynamically for backward compatibility
 setmetatable(M, {
@@ -15,9 +15,9 @@ setmetatable(M, {
 })
 
 -- Load submodules
-local view = require('mrreviewer.diff.view')
-local navigation_module = require('mrreviewer.diff.navigation')
-local keymaps_module = require('mrreviewer.diff.keymaps')
+local view = require('mrreviewer.ui.diff.view')
+local navigation_module = require('mrreviewer.ui.diff.navigation')
+local keymaps_module = require('mrreviewer.ui.diff.keymaps')
 
 -- Re-export view functions
 M.get_changed_files = view.get_changed_files
@@ -66,7 +66,7 @@ end
 --- Open diff view for an MR
 --- @param mr_data table MR details
 function M.open(mr_data)
-  local utils = require('mrreviewer.utils')
+  local utils = require('mrreviewer.lib.utils')
 
   if not mr_data then
     utils.notify('No MR data provided', 'error')

@@ -2,9 +2,9 @@
 -- Diff view creation and file loading
 
 local M = {}
-local utils = require('mrreviewer.utils')
+local utils = require('mrreviewer.lib.utils')
 local Job = require('plenary.job')
-local comments = require('mrreviewer.comments')
+local comments = require('mrreviewer.ui.comments')
 
 --- Get changed files from MR data using git diff
 --- @param mr_data table MR details with diff_refs
@@ -41,7 +41,7 @@ function M.get_changed_files(mr_data)
   end
 
   -- Get repo root for running git commands
-  local project = require('mrreviewer.project')
+  local project = require('mrreviewer.integrations.project')
   local repo_root = project.get_repo_root()
 
   -- Ensure we have the commits locally by fetching if needed
@@ -102,7 +102,7 @@ function M.fetch_file_versions(file_path, ref)
   end
 
   -- Get repo root for running git commands
-  local project = require('mrreviewer.project')
+  local project = require('mrreviewer.integrations.project')
   local repo_root = project.get_repo_root()
 
   local job = Job:new({
@@ -132,7 +132,7 @@ end
 --- @return number Buffer number
 function M.create_unified_view(old_lines, new_lines, file_info, state)
   -- Ensure signs are defined
-  local highlights = require('mrreviewer.highlights')
+  local highlights = require('mrreviewer.ui.highlights')
   highlights.define_signs()
 
   -- Create a namespace for diff highlights

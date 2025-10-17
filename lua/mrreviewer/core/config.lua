@@ -2,7 +2,7 @@
 -- Configuration management with user settings and defaults
 
 local M = {}
-local utils = require('mrreviewer.utils')
+local utils = require('mrreviewer.lib.utils')
 
 -- Default configuration
 local defaults = {

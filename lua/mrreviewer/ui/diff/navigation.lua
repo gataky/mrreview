@@ -2,8 +2,8 @@
 -- File and comment navigation for diff view
 
 local M = {}
-local utils = require('mrreviewer.utils')
-local comments = require('mrreviewer.comments')
+local utils = require('mrreviewer.lib.utils')
+local comments = require('mrreviewer.ui.comments')
 
 --- Navigate to next file in MR
 --- @param state table Diff state

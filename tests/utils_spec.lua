@@ -2,7 +2,7 @@
 -- Tests for utility functions
 
 describe('utils', function()
-  local utils = require('mrreviewer.utils')
+  local utils = require('mrreviewer.lib.utils')
 
   describe('trim', function()
     it('removes leading and trailing whitespace', function()

@@ -2,7 +2,7 @@
 -- Selection interfaces and user prompts using Telescope
 
 local M = {}
-local utils = require('mrreviewer.utils')
+local utils = require('mrreviewer.lib.utils')
 
 --- Format a timestamp for display
 --- @param timestamp string ISO 8601 timestamp

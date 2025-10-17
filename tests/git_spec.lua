@@ -2,7 +2,7 @@
 -- Tests for git operations module
 
 describe('git', function()
-  local git = require('mrreviewer.git')
+  local git = require('mrreviewer.integrations.git')
 
   -- We're running tests in a git repository, so we can test actual operations
   local test_repo_root = vim.fn.getcwd()

@@ -2,7 +2,7 @@
 -- Tests for JSON parsing functions
 
 describe('parsers', function()
-  local parsers = require('mrreviewer.parsers')
+  local parsers = require('mrreviewer.lib.parsers')
 
   describe('parse_mr_list', function()
     it('parses valid MR list JSON', function()

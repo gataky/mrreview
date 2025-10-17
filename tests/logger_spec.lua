@@ -8,7 +8,7 @@ describe('logger', function()
   before_each(function()
     -- Fresh require to reset logger state
     package.loaded['mrreviewer.logger'] = nil
-    logger = require('mrreviewer.logger')
+    logger = require('mrreviewer.core.logger')
 
     -- Use a test-specific log path
     test_log_path = vim.fn.tempname() .. '_mrreviewer_test.log'
@@ -34,7 +34,7 @@ describe('logger', function()
   describe('configuration', function()
     it('should use default configuration when not setup', function()
       package.loaded['mrreviewer.logger'] = nil
-      logger = require('mrreviewer.logger')
+      logger = require('mrreviewer.core.logger')
 
       assert.equals(true, logger.config.enabled)
       assert.equals(logger.levels.INFO, logger.config.level)
@@ -178,7 +178,7 @@ describe('logger', function()
 
   describe('log_error', function()
     it('should log error object with type and message', function()
-      local errors = require('mrreviewer.errors')
+      local errors = require('mrreviewer.core.errors')
       local err = errors.git_error('Git operation failed', { command = 'git status' })
 
       logger.log_error('test', err)
@@ -334,7 +334,7 @@ describe('logger', function()
 
     it('should return default path when not configured', function()
       package.loaded['mrreviewer.logger'] = nil
-      logger = require('mrreviewer.logger')
+      logger = require('mrreviewer.core.logger')
 
       local path = logger.get_log_path()
 

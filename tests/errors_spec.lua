@@ -5,7 +5,7 @@ describe('errors', function()
   local errors
 
   before_each(function()
-    errors = require('mrreviewer.errors')
+    errors = require('mrreviewer.core.errors')
   end)
 
   describe('ErrorType enum', function()

@@ -105,7 +105,7 @@ end
 --- @param msg string Message to display
 --- @param level string|nil Log level: 'error', 'warn', 'info', 'debug' (default: 'info')
 function M.notify(msg, level)
-  local config = require('mrreviewer.config')
+  local config = require('mrreviewer.core.config')
   if not config.get_value('notifications.enabled') then
     return
   end
@@ -141,14 +141,14 @@ end
 --- Get current git branch
 --- @return string|nil Branch name or nil if not in a git repo
 function M.get_current_branch()
-  local git = require('mrreviewer.git')
+  local git = require('mrreviewer.integrations.git')
   return git.get_current_branch()
 end
 
 --- Check if currently in a git repository
 --- @return boolean
 function M.is_git_repo()
-  local git = require('mrreviewer.git')
+  local git = require('mrreviewer.integrations.git')
   return git.is_git_repo()
 end
 

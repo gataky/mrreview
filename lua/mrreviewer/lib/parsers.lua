@@ -2,7 +2,7 @@
 -- JSON parsers for MR data, comments, and position info
 
 local M = {}
-local utils = require('mrreviewer.utils')
+local utils = require('mrreviewer.lib.utils')
 
 --- Parse MR list output from glab
 --- @param json_str string JSON output from `glab mr list --output json`

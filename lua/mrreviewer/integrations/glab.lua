@@ -2,10 +2,10 @@
 -- Wrapper for glab CLI tool with async execution using plenary.job
 
 local M = {}
-local utils = require('mrreviewer.utils')
+local utils = require('mrreviewer.lib.utils')
 local Job = require('plenary.job')
-local errors = require('mrreviewer.errors')
-local logger = require('mrreviewer.logger')
+local errors = require('mrreviewer.core.errors')
+local logger = require('mrreviewer.core.logger')
 
 --- Execute a glab command asynchronously
 --- @param args table Command arguments (e.g., {'mr', 'list', '--output', 'json'})
@@ -13,7 +13,7 @@ local logger = require('mrreviewer.logger')
 --- @param timeout number|nil Timeout in milliseconds (default: 30000)
 --- @param cwd string|nil Working directory (defaults to git repo root)
 function M.execute_async(args, callback, timeout, cwd)
-  local config = require('mrreviewer.config')
+  local config = require('mrreviewer.core.config')
   local glab_path = config.get_value('glab.path') or 'glab'
   timeout = timeout or config.get_value('glab.timeout') or 30000
 
@@ -22,7 +22,7 @@ function M.execute_async(args, callback, timeout, cwd)
 
   -- If no cwd specified, try to get git repo root
   if not cwd then
-    local project = require('mrreviewer.project')
+    local project = require('mrreviewer.integrations.project')
     cwd = project.get_repo_root()
   end
 
@@ -70,7 +70,7 @@ end
 --- @param cwd string|nil Working directory (defaults to git repo root)
 --- @return number|nil, string|nil, string|nil, table|nil exit_code, stdout, stderr, error object
 function M.execute_sync(args, timeout, cwd)
-  local config = require('mrreviewer.config')
+  local config = require('mrreviewer.core.config')
   local glab_path = config.get_value('glab.path') or 'glab'
   timeout = timeout or config.get_value('glab.timeout') or 30000
 
@@ -79,7 +79,7 @@ function M.execute_sync(args, timeout, cwd)
 
   -- If no cwd specified, try to get git repo root
   if not cwd then
-    local project = require('mrreviewer.project')
+    local project = require('mrreviewer.integrations.project')
     cwd = project.get_repo_root()
   end
 
@@ -134,8 +134,8 @@ end
 --- and glab will automatically use the correct GitLab instance based on git remote.
 --- @return boolean, table|nil Returns true if ready, or false and error object
 function M.check_installation()
-  local config = require('mrreviewer.config')
-  local git = require('mrreviewer.git')
+  local config = require('mrreviewer.core.config')
+  local git = require('mrreviewer.integrations.git')
   local glab_path = config.get_value('glab.path') or 'glab'
 
   logger.debug('glab', 'Checking glab installation', { glab_path = glab_path })

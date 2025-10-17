@@ -2,7 +2,7 @@
 -- Tests for project/git detection and GitLab URL parsing
 
 describe('project', function()
-  local project = require('mrreviewer.project')
+  local project = require('mrreviewer.integrations.project')
 
   describe('parse_gitlab_url', function()
     it('parses HTTPS URLs', function()
@@ -193,7 +193,7 @@ describe('project', function()
       -- This test will only pass if we're in a GitLab repo
       -- Otherwise it should return nil with error object
       local info, err = project.get_project_info()
-      local errors = require('mrreviewer.errors')
+      local errors = require('mrreviewer.core.errors')
 
       if info then
         -- If successful, verify structure
@@ -212,7 +212,7 @@ describe('project', function()
 
     it('accepts custom remote name', function()
       local info, err = project.get_project_info('upstream')
-      local errors = require('mrreviewer.errors')
+      local errors = require('mrreviewer.core.errors')
       -- May fail if upstream doesn't exist or isn't GitLab
       if not info then
         assert.is_true(errors.is_error(err))
@@ -223,7 +223,7 @@ describe('project', function()
       -- We can't easily test this without having a non-GitLab remote
       -- but we verify the function signature works
       local info, err = project.get_project_info('nonexistent_remote')
-      local errors = require('mrreviewer.errors')
+      local errors = require('mrreviewer.core.errors')
       assert.is_nil(info)
       assert.is_true(errors.is_error(err))
     end)

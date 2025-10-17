@@ -2,12 +2,12 @@
 -- Neovim command registration and handlers
 
 local M = {}
-local glab = require('mrreviewer.glab')
-local parsers = require('mrreviewer.parsers')
-local project = require('mrreviewer.project')
-local utils = require('mrreviewer.utils')
-local ui = require('mrreviewer.ui')
-local diff = require('mrreviewer.diff')
+local glab = require('mrreviewer.integrations.glab')
+local parsers = require('mrreviewer.lib.parsers')
+local project = require('mrreviewer.integrations.project')
+local utils = require('mrreviewer.lib.utils')
+local ui = require('mrreviewer.ui.ui')
+local diff = require('mrreviewer.ui.diff')
 
 --- Check prerequisites before running commands
 --- @return boolean, string|nil Returns true if ready, or false and error message
@@ -217,13 +217,13 @@ end
 
 --- Open log file in a split window
 function M.logs()
-  local logger = require('mrreviewer.logger')
+  local logger = require('mrreviewer.core.logger')
   logger.open_logs('vsplit')
 end
 
 --- Clear all log files
 function M.clear_logs()
-  local logger = require('mrreviewer.logger')
+  local logger = require('mrreviewer.core.logger')
   logger.clear_logs()
   utils.notify('Log files cleared', 'info')
 end
@@ -300,7 +300,7 @@ function M.list_comments()
         local mr_data = mrreviewer.state.current_mr.data
 
         -- Find the file in the MR
-        local diff_mod = require('mrreviewer.diff')
+        local diff_mod = require('mrreviewer.ui.diff')
         local files = diff_mod.get_changed_files(mr_data)
 
         -- Find matching file
@@ -326,7 +326,7 @@ function M.list_comments()
             pcall(vim.api.nvim_win_set_cursor, 0, { tonumber(entry.line), 0 })
             -- Show the comment float
             vim.defer_fn(function()
-              local comment_mod = require('mrreviewer.comments')
+              local comment_mod = require('mrreviewer.ui.comments')
               comment_mod.show_float_for_current_line()
             end, 100)
           end)

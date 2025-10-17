@@ -36,7 +36,7 @@ describe('integration example', function()
 
     describe('project detection', function()
         it('should detect GitLab project from remote URL', function()
-            local project = require('mrreviewer.project')
+            local project = require('mrreviewer.integrations.project')
 
             local info, err = project.get_project_info()
 
@@ -49,7 +49,7 @@ describe('integration example', function()
             -- Simulate not being in a git repo
             env.git.simulate_no_repo()
 
-            local project = require('mrreviewer.project')
+            local project = require('mrreviewer.integrations.project')
             local info, err = project.get_project_info()
 
             assert.is_nil(info)
@@ -60,7 +60,7 @@ describe('integration example', function()
 
     describe('glab integration', function()
         it('should check glab installation', function()
-            local glab = require('mrreviewer.glab')
+            local glab = require('mrreviewer.integrations.glab')
 
             local ok, err = glab.check_installation()
 
@@ -71,7 +71,7 @@ describe('integration example', function()
         it('should fail when glab is not installed', function()
             env.glab.simulate_not_installed()
 
-            local glab = require('mrreviewer.glab')
+            local glab = require('mrreviewer.integrations.glab')
             local ok, err = glab.check_installation()
 
             assert.is_false(ok)
@@ -91,7 +91,7 @@ describe('integration example', function()
             }
             env.glab.simulate_mr_list(mock_mrs)
 
-            local glab = require('mrreviewer.glab')
+            local glab = require('mrreviewer.integrations.glab')
             local args = glab.build_mr_list_args('opened')
 
             -- Execute async command
@@ -113,7 +113,7 @@ describe('integration example', function()
 
     describe('notification integration', function()
         it('should capture vim.notify calls', function()
-            local utils = require('mrreviewer.utils')
+            local utils = require('mrreviewer.lib.utils')
 
             utils.notify('Test message', 'info')
 
@@ -123,7 +123,7 @@ describe('integration example', function()
         end)
 
         it('should check if specific notification was sent', function()
-            local utils = require('mrreviewer.utils')
+            local utils = require('mrreviewer.lib.utils')
 
             utils.notify('Operation successful', 'info')
             utils.notify('Warning message', 'warn')
@@ -168,7 +168,7 @@ describe('integration example', function()
         end)
 
         it('should assert error tuples', function()
-            local errors = require('mrreviewer.errors')
+            local errors = require('mrreviewer.core.errors')
 
             -- Success case
             helpers.assert_tuple('result', nil, true)

@@ -8,7 +8,7 @@ describe('config', function()
   before_each(function()
     -- Clear the module cache to get a fresh instance
     package.loaded['mrreviewer.config'] = nil
-    config = require('mrreviewer.config')
+    config = require('mrreviewer.core.config')
   end)
 
   describe('setup', function()

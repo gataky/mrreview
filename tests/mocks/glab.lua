@@ -21,7 +21,7 @@ function M.setup(opts)
 
     -- Store original if not already stored
     if not M._original then
-        M._original = require('mrreviewer.glab')
+        M._original = require('mrreviewer.integrations.glab')
     end
 
     -- Merge options into state
@@ -66,7 +66,7 @@ function M.setup(opts)
         if M.state.installation_ok then
             return true, nil
         else
-            local errors = require('mrreviewer.errors')
+            local errors = require('mrreviewer.core.errors')
             return false, errors.validation_error('glab CLI is not installed')
         end
     end

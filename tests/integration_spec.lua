@@ -33,13 +33,13 @@ describe('MRReviewer Integration Tests', function()
             env.teardown()
         end
         -- Clear plugin state
-        local state = require('mrreviewer.state')
+        local state = require('mrreviewer.core.state')
         state.clear_all()
     end)
 
     describe('Project Detection', function()
         it('should detect GitLab project from git remote', function()
-            local project = require('mrreviewer.project')
+            local project = require('mrreviewer.integrations.project')
 
             local info, err = project.get_project_info()
 
@@ -53,7 +53,7 @@ describe('MRReviewer Integration Tests', function()
         it('should fail gracefully when not in git repo', function()
             env.git.simulate_no_repo()
 
-            local project = require('mrreviewer.project')
+            local project = require('mrreviewer.integrations.project')
             local info, err = project.get_project_info()
 
             assert.is_nil(info)
@@ -64,7 +64,7 @@ describe('MRReviewer Integration Tests', function()
         it('should handle invalid GitLab URLs', function()
             env.git.simulate_remote_url('https://github.com/user/repo.git')
 
-            local project = require('mrreviewer.project')
+            local project = require('mrreviewer.integrations.project')
             local info, err = project.get_project_info()
 
             assert.is_nil(info)
@@ -96,7 +96,7 @@ describe('MRReviewer Integration Tests', function()
             }
             env.glab.simulate_mr_list(mock_mrs)
 
-            local glab = require('mrreviewer.glab')
+            local glab = require('mrreviewer.integrations.glab')
             local args = glab.build_mr_list_args('opened')
 
             -- Execute async command
@@ -124,7 +124,7 @@ describe('MRReviewer Integration Tests', function()
         it('should handle glab not installed', function()
             env.glab.simulate_not_installed()
 
-            local glab = require('mrreviewer.glab')
+            local glab = require('mrreviewer.integrations.glab')
             local ok, err = glab.check_installation()
 
             assert.is_false(ok)
@@ -135,7 +135,7 @@ describe('MRReviewer Integration Tests', function()
         it('should handle glab command failure', function()
             env.glab.simulate_error('mr list --output json', 'API request failed')
 
-            local glab = require('mrreviewer.glab')
+            local glab = require('mrreviewer.integrations.glab')
             local args = glab.build_mr_list_args('opened')
 
             local result = nil
@@ -169,7 +169,7 @@ describe('MRReviewer Integration Tests', function()
 
             env.glab.simulate_mr_view(125, mr_data)
 
-            local glab = require('mrreviewer.glab')
+            local glab = require('mrreviewer.integrations.glab')
             local args = glab.build_mr_view_args(125, true)
 
             local result = nil
@@ -193,7 +193,7 @@ describe('MRReviewer Integration Tests', function()
 
     describe('State Management Integration', function()
         it('should maintain state across operations', function()
-            local state = require('mrreviewer.state')
+            local state = require('mrreviewer.core.state')
 
             -- Initially not initialized
             assert.is_false(state.is_initialized())
@@ -225,7 +225,7 @@ describe('MRReviewer Integration Tests', function()
         end)
 
         it('should handle dot notation state access', function()
-            local state = require('mrreviewer.state')
+            local state = require('mrreviewer.core.state')
 
             -- Set nested values
             state.set_value('session.initialized', true)
@@ -246,7 +246,7 @@ describe('MRReviewer Integration Tests', function()
             -- Simulate git error
             env.git.simulate_no_repo()
 
-            local project = require('mrreviewer.project')
+            local project = require('mrreviewer.integrations.project')
             local info, err = project.get_project_info()
 
             assert.is_nil(info)
@@ -254,14 +254,14 @@ describe('MRReviewer Integration Tests', function()
             helpers.assert_error(err, 'GitError')
 
             -- Error should contain context
-            local errors = require('mrreviewer.errors')
+            local errors = require('mrreviewer.core.errors')
             local formatted = errors.format(err)
             assert.matches('git', formatted:lower())
         end)
 
         it('should handle validation errors', function()
-            local config = require('mrreviewer.config')
-            local errors = require('mrreviewer.errors')
+            local config = require('mrreviewer.core.config')
+            local errors = require('mrreviewer.core.errors')
 
             -- Try to set invalid config value
             local result, err = pcall(function()
@@ -278,7 +278,7 @@ describe('MRReviewer Integration Tests', function()
 
     describe('Notification Integration', function()
         it('should capture vim.notify calls', function()
-            local utils = require('mrreviewer.utils')
+            local utils = require('mrreviewer.lib.utils')
 
             utils.notify('Operation started', 'info')
             utils.notify('Operation complete', 'info')
@@ -290,7 +290,7 @@ describe('MRReviewer Integration Tests', function()
         end)
 
         it('should check for specific notifications', function()
-            local utils = require('mrreviewer.utils')
+            local utils = require('mrreviewer.lib.utils')
 
             utils.notify('Fetching MR data...', 'info')
             utils.notify('MR loaded successfully', 'info')
@@ -305,7 +305,7 @@ describe('MRReviewer Integration Tests', function()
 
     describe('Comment Processing Integration', function()
         it('should filter and sort comments', function()
-            local comments_module = require('mrreviewer.comments')
+            local comments_module = require('mrreviewer.ui.comments')
 
             local comments = {
                 helpers.mock_comment({ id = 1, body = 'Resolved comment', resolved = true }),
@@ -354,7 +354,7 @@ describe('MRReviewer Integration Tests', function()
 
     describe('Configuration Integration', function()
         it('should apply user configuration', function()
-            local config = require('mrreviewer.config')
+            local config = require('mrreviewer.core.config')
 
             config.setup({
                 comment_display_mode = 'floating',
@@ -372,7 +372,7 @@ describe('MRReviewer Integration Tests', function()
         end)
 
         it('should use default values for unspecified config', function()
-            local config = require('mrreviewer.config')
+            local config = require('mrreviewer.core.config')
 
             config.setup({
                 comment_display_mode = 'inline',
@@ -388,19 +388,19 @@ describe('MRReviewer Integration Tests', function()
     describe('Full Workflow Integration', function()
         it('should complete full MR review workflow', function()
             -- 1. Check git repo
-            local git = require('mrreviewer.git')
+            local git = require('mrreviewer.integrations.git')
             local branch, err = git.get_current_branch()
             assert.is_not_nil(branch)
             assert.equals('feature/test-branch', branch)
 
             -- 2. Get project info
-            local project = require('mrreviewer.project')
+            local project = require('mrreviewer.integrations.project')
             local info, err2 = project.get_project_info()
             assert.is_not_nil(info)
             assert.equals('testorg/testrepo', info.full_path)
 
             -- 3. Check glab installation
-            local glab = require('mrreviewer.glab')
+            local glab = require('mrreviewer.integrations.glab')
             local ok, err3 = glab.check_installation()
             assert.is_true(ok)
 
@@ -427,7 +427,7 @@ describe('MRReviewer Integration Tests', function()
             assert.equals(1, #mrs)
 
             -- 5. Store in state
-            local state = require('mrreviewer.state')
+            local state = require('mrreviewer.core.state')
             state.set_initialized(true)
             state.set_current_mr(mrs[1])
 

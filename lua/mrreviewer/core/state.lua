@@ -3,7 +3,7 @@
 -- Consolidates state from init.lua, diff.lua, and comments.lua
 
 local M = {}
-local errors = require('mrreviewer.errors')
+local errors = require('mrreviewer.core.errors')
 
 -- Central state structure
 M._state = {

@@ -2,12 +2,12 @@
 -- Comment fetching, parsing, and display logic
 
 local M = {}
-local utils = require('mrreviewer.utils')
-local parsers = require('mrreviewer.parsers')
-local highlights = require('mrreviewer.highlights')
-local position = require('mrreviewer.position')
-local formatting = require('mrreviewer.comments.formatting')
-local state_module = require('mrreviewer.state')
+local utils = require('mrreviewer.lib.utils')
+local parsers = require('mrreviewer.lib.parsers')
+local highlights = require('mrreviewer.ui.highlights')
+local position = require('mrreviewer.lib.position')
+local formatting = require('mrreviewer.ui.comments.formatting')
+local state_module = require('mrreviewer.core.state')
 
 -- Expose comments state dynamically for backward compatibility
 setmetatable(M, {
@@ -39,7 +39,7 @@ end
 --- @param comments table List of comments to display
 --- @param buffer number Target buffer where diff is shown
 function M.display_split(comments, buffer)
-  local config = require('mrreviewer.config')
+  local config = require('mrreviewer.core.config')
 
   -- Close existing comment window if open
   if M.state.comment_window and vim.api.nvim_win_is_valid(M.state.comment_window) then
@@ -334,7 +334,7 @@ end
 --- @param buffer number Buffer number
 function M.display_for_file(file_path, buffer)
   local mrreviewer = require('mrreviewer')
-  local config = require('mrreviewer.config')
+  local config = require('mrreviewer.core.config')
 
   -- Get comments from state
   local all_comments = mrreviewer.state.current_mr and mrreviewer.state.current_mr.comments
@@ -418,7 +418,7 @@ end
 
 --- Toggle comment display mode
 function M.toggle_mode()
-  local config = require('mrreviewer.config')
+  local config = require('mrreviewer.core.config')
   local current_mode = config.get_value('comment_display_mode')
 
   -- Cycle through modes: split -> virtual_text -> float -> split

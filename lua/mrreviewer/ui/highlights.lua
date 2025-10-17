@@ -35,7 +35,7 @@ local highlights = {
 
 --- Setup highlight groups
 function M.setup()
-  local config = require('mrreviewer.config')
+  local config = require('mrreviewer.core.config')
 
   -- Only set up custom highlights if enabled in config
   if not config.get_value('highlights.custom') then
