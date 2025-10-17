@@ -66,16 +66,16 @@ Generated from: `0001-prd-mr-review-plugin.md`
   - [x] 2.9 Add comprehensive error handling for network failures, invalid JSON, and authentication errors
   - [x] 2.10 Implement error notification system using `vim.notify()` with appropriate log levels
 
-- [ ] 3.0 **MR Discovery and Selection Interface**
-  - [ ] 3.1 Create `lua/mrreviewer/commands.lua` module to register Neovim commands
-  - [ ] 3.2 Implement `:MRList` command to fetch and display list of open MRs
-  - [ ] 3.3 Implement `:MRCurrent` command to detect and open MR for current branch
-  - [ ] 3.4 Implement `:MRReview <number>` command to open specific MR by number
-  - [ ] 3.5 Create `lua/mrreviewer/ui.lua` module for selection interfaces
-  - [ ] 3.6 Implement `ui.select_mr()` using `vim.ui.select()` to display MR list with metadata
-  - [ ] 3.7 Format MR entries for display (number, title, author, status, created_at)
-  - [ ] 3.8 Implement current branch detection using git commands
-  - [ ] 3.9 Add loading indicators and status messages during MR fetching
+- [x] 3.0 **MR Discovery and Selection Interface**
+  - [x] 3.1 Create `lua/mrreviewer/commands.lua` module to register Neovim commands
+  - [x] 3.2 Implement `:MRList` command to fetch and display list of open MRs
+  - [x] 3.3 Implement `:MRCurrent` command to detect and open MR for current branch
+  - [x] 3.4 Implement `:MRReview <number>` command to open specific MR by number
+  - [x] 3.5 Create `lua/mrreviewer/ui.lua` module for selection interfaces
+  - [x] 3.6 Implement `ui.select_mr()` using `vim.ui.select()` to display MR list with metadata
+  - [x] 3.7 Format MR entries for display (number, title, author, status, created_at)
+  - [x] 3.8 Implement current branch detection using git commands
+  - [x] 3.9 Add loading indicators and status messages during MR fetching
 
 - [ ] 4.0 **Diff View System**
   - [ ] 4.1 Create `lua/mrreviewer/diff.lua` module for diff view management
