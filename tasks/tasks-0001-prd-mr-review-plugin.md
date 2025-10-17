@@ -104,20 +104,20 @@ Generated from: `0001-prd-mr-review-plugin.md`
   - [x] 5.12 Implement comment navigation keymaps (next comment, previous comment)
   - [x] 5.13 Add visual indicator (sign column) for lines with comments
 
-- [ ] 6.0 **Documentation and Testing**
-  - [ ] 6.1 Create `README.md` with project description, features, and installation instructions
-  - [ ] 6.2 Document prerequisites (Neovim version, glab CLI, git)
-  - [ ] 6.3 Add configuration examples showing all available options
-  - [ ] 6.4 Document all commands (`:MRList`, `:MRCurrent`, `:MRReview`)
-  - [ ] 6.5 Document default keymaps and how to customize them
-  - [ ] 6.6 Create `doc/mrreviewer.txt` in Vim help format
-  - [ ] 6.7 Set up `tests/` directory with plenary.nvim test structure
-  - [ ] 6.8 Write `tests/glab_spec.lua` for async execution and command building
-  - [ ] 6.9 Write `tests/parsers_spec.lua` for JSON parsing with sample GitLab responses
-  - [ ] 6.10 Write `tests/comments_spec.lua` for comment position mapping logic
-  - [ ] 6.11 Write `tests/utils_spec.lua` for utility functions
-  - [ ] 6.12 Add usage examples and screenshots/GIFs to README
-  - [ ] 6.13 Document common issues and troubleshooting steps
+- [x] 6.0 **Documentation and Testing**
+  - [x] 6.1 Create `README.md` with project description, features, and installation instructions
+  - [x] 6.2 Document prerequisites (Neovim version, glab CLI, git)
+  - [x] 6.3 Add configuration examples showing all available options
+  - [x] 6.4 Document all commands (`:MRList`, `:MRCurrent`, `:MRReview`)
+  - [x] 6.5 Document default keymaps and how to customize them
+  - [x] 6.6 Create `doc/mrreviewer.txt` in Vim help format
+  - [x] 6.7 Set up `tests/` directory with plenary.nvim test structure
+  - [x] 6.8 Write `tests/glab_spec.lua` for async execution and command building
+  - [x] 6.9 Write `tests/parsers_spec.lua` for JSON parsing with sample GitLab responses
+  - [x] 6.10 Write `tests/comments_spec.lua` for comment position mapping logic
+  - [x] 6.11 Write `tests/utils_spec.lua` for utility functions
+  - [x] 6.12 Add usage examples and screenshots/GIFs to README
+  - [x] 6.13 Document common issues and troubleshooting steps
 
 ---
 

@@ -1,0 +1,202 @@
+*mrreviewer.txt*  GitLab Merge Request reviewer for Neovim
+
+Author: Your Name
+License: MIT
+
+==============================================================================
+CONTENTS                                                *mrreviewer-contents*
+
+    1. Introduction .................... |mrreviewer-introduction|
+    2. Requirements .................... |mrreviewer-requirements|
+    3. Installation .................... |mrreviewer-installation|
+    4. Configuration ................... |mrreviewer-configuration|
+    5. Commands ........................ |mrreviewer-commands|
+    6. Keymaps ......................... |mrreviewer-keymaps|
+    7. Usage ........................... |mrreviewer-usage|
+    8. Troubleshooting ................. |mrreviewer-troubleshooting|
+
+==============================================================================
+1. Introduction                                     *mrreviewer-introduction*
+
+MRReviewer is a Neovim plugin for reviewing GitLab Merge Requests directly
+within your editor. It provides:
+
+- Browse and select open merge requests with Telescope
+- Automatic MR detection for current branch
+- Side-by-side diff view using Neovim's built-in diff
+- Comment display with dual modes (split buffer or virtual text)
+- Fast, async operations with no UI blocking
+
+==============================================================================
+2. Requirements                                     *mrreviewer-requirements*
+
+Required:~
+  • Neovim >= 0.8.0
+  • glab CLI tool (https://gitlab.com/gitlab-org/cli)
+  • plenary.nvim (https://github.com/nvim-lua/plenary.nvim)
+
+Optional:~
+  • telescope.nvim for enhanced MR selection UI
+
+To install and authenticate glab:
+>
+    brew install glab          # macOS
+    glab auth login            # Authenticate
+<
+
+==============================================================================
+3. Installation                                     *mrreviewer-installation*
+
+Using lazy.nvim:~
+>lua
+    {
+      'yourusername/mrreviewer',
+      dependencies = {
+        'nvim-lua/plenary.nvim',
+        'nvim-telescope/telescope.nvim',  -- Optional
+      },
+      config = function()
+        require('mrreviewer').setup()
+      end
+    }
+<
+
+==============================================================================
+4. Configuration                                   *mrreviewer-configuration*
+
+Default configuration:~
+>lua
+    require('mrreviewer').setup({
+      -- Comment display mode: 'split' or 'virtual_text'
+      comment_display_mode = 'split',
+
+      -- Window layout options
+      window = {
+        comment_width = 40,
+        vertical_split = true,
+        sync_scroll = true,
+      },
+
+      -- Keymaps for diff view navigation
+      keymaps = {
+        next_file = ']f',
+        prev_file = '[f',
+        next_comment = ']c',
+        prev_comment = '[c',
+        close = 'q',
+        toggle_comments = '<leader>tc',
+      },
+
+      -- GitLab/glab CLI options
+      glab = {
+        path = 'glab',
+        timeout = 30000,  -- milliseconds
+      },
+
+      -- Notification settings
+      notifications = {
+        enabled = true,
+        level = 'info',  -- 'error', 'warn', 'info', 'debug'
+      },
+    })
+<
+
+==============================================================================
+5. Commands                                             *mrreviewer-commands*
+
+                                                                    *:MRList*
+:MRList                 Browse and select from open merge requests.
+                        Uses Telescope if available, falls back to
+                        vim.ui.select otherwise.
+
+                                                                 *:MRCurrent*
+:MRCurrent              Automatically detect and open the MR for the
+                        current git branch.
+
+                                                                  *:MRReview*
+:MRReview {number}      Review a specific MR by number.
+                        Example: :MRReview 123
+
+==============================================================================
+6. Keymaps                                               *mrreviewer-keymaps*
+
+Default keymaps in diff view:~
+
+  ]f                    Navigate to next file in MR
+  [f                    Navigate to previous file in MR
+  ]c                    Jump to next comment
+  [c                    Jump to previous comment
+  <leader>tc            Toggle comment display mode
+  q                     Close diff view
+
+All keymaps can be customized via configuration (see
+|mrreviewer-configuration|).
+
+==============================================================================
+7. Usage                                                   *mrreviewer-usage*
+
+Basic workflow:~
+
+1. Open an MR:
+>
+    :MRCurrent          " Open MR for current branch
+    :MRList             " Browse all open MRs
+    :MRReview 123       " Review specific MR
+<
+
+2. Navigate in diff view:
+   • Use ]f / [f to navigate between files
+   • Use ]c / [c to jump between comments
+   • Press q to close the diff view
+
+3. Toggle comment display:
+   • Press <leader>tc to switch between split and virtual text modes
+   • Split mode shows comments in a separate window
+   • Virtual text mode shows comments inline
+
+Comment display modes:~
+
+*mrreviewer-split-mode*
+Split Buffer Mode (default):
+  • Comments appear in a vertical split on the right
+  • Shows all comments for the current file
+  • Formatted with author, timestamp, and resolved status
+  • Sign column indicators (💬 for comments, ✓ for resolved)
+
+*mrreviewer-virtual-text-mode*
+Virtual Text Mode:
+  • Comments appear inline as virtual text
+  • Compact view without separate window
+  • Useful for quick review
+  • Toggle with <leader>tc
+
+==============================================================================
+8. Troubleshooting                               *mrreviewer-troubleshooting*
+
+Problem: glab not authenticated~
+Solution: Run `glab auth login` to authenticate with GitLab.
+
+Problem: Not in a git repository~
+Solution: Ensure you're running commands from within a git repository with
+a GitLab remote.
+
+Problem: Failed to detect GitLab project~
+Solution: Verify your git remote URL contains "gitlab":
+>
+    git remote -v
+<
+
+Problem: No comments displayed~
+Solutions:
+  • Verify the MR has comments on code (not just discussion comments)
+  • Check that comments are on the file you're currently viewing
+  • Try toggling comment display mode with <leader>tc
+
+Problem: Diff not loading~
+Solutions:
+  • Ensure the MR has changed files
+  • Verify `git show` works in your repository
+  • Check that the branch hasn't been deleted
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:
