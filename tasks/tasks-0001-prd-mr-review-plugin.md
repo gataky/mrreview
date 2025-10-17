@@ -45,7 +45,7 @@ Generated from: `0001-prd-mr-review-plugin.md`
 
 ## Tasks
 
-- [ ] 1.0 **Project Setup and Infrastructure**
+- [x] 1.0 **Project Setup and Infrastructure**
   - [x] 1.1 Create standard Neovim plugin directory structure (`plugin/`, `lua/mrreviewer/`, `doc/`, `tests/`)
   - [x] 1.2 Create `plugin/mrreviewer.lua` as the main entry point with command registration
   - [x] 1.3 Create `lua/mrreviewer/init.lua` with setup() function and module initialization
