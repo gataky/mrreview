@@ -11,5 +11,10 @@ end
 vim.opt.rtp:append('.')
 vim.opt.rtp:append(plenary_dir)
 
+-- Add tests directory to package path for test helper modules
+local tests_dir = vim.fn.getcwd() .. '/tests'
+package.path = package.path .. ';' .. tests_dir .. '/?.lua'
+package.path = package.path .. ';' .. tests_dir .. '/?/init.lua'
+
 vim.cmd('runtime plugin/plenary.vim')
 require('plenary.busted')
