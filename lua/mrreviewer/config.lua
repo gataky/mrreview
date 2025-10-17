@@ -63,6 +63,20 @@ local defaults = {
     -- Log level: 'error', 'warn', 'info', 'debug'
     level = 'info',
   },
+
+  -- Logging settings
+  logging = {
+    -- Enable file logging
+    enabled = true,
+    -- Log level: 'DEBUG', 'INFO', 'WARN', 'ERROR'
+    level = 'INFO',
+    -- Log file path (nil uses default: ~/.local/state/nvim/mrreviewer.log)
+    file_path = nil,
+    -- Maximum log file size in bytes before rotation (10MB)
+    max_file_size = 10 * 1024 * 1024,
+    -- Number of old log files to keep
+    max_backups = 3,
+  },
 }
 
 -- Current active configuration

@@ -24,6 +24,13 @@ function M.setup(opts)
   local config = require('mrreviewer.config')
   config.setup(opts)
 
+  -- Initialize logger with configuration
+  local logger = require('mrreviewer.logger')
+  local logging_config = config.get_value('logging')
+  if logging_config then
+    logger.setup(logging_config)
+  end
+
   -- Set up highlight groups
   local highlights = require('mrreviewer.highlights')
   highlights.setup()

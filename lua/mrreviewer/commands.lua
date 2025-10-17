@@ -215,6 +215,19 @@ function M.debug_json(mr_number)
   end)
 end
 
+--- Open log file in a split window
+function M.logs()
+  local logger = require('mrreviewer.logger')
+  logger.open_logs('vsplit')
+end
+
+--- Clear all log files
+function M.clear_logs()
+  local logger = require('mrreviewer.logger')
+  logger.clear_logs()
+  utils.notify('Log files cleared', 'info')
+end
+
 --- List all comments in current MR using Telescope
 function M.list_comments()
   local mrreviewer = require('mrreviewer')

@@ -40,3 +40,15 @@ vim.api.nvim_create_user_command('MRComments', function()
 end, {
   desc = 'List all comments in current MR using Telescope'
 })
+
+vim.api.nvim_create_user_command('MRLogs', function()
+  require('mrreviewer.commands').logs()
+end, {
+  desc = 'Open MRReviewer log file in a split window'
+})
+
+vim.api.nvim_create_user_command('MRClearLogs', function()
+  require('mrreviewer.commands').clear_logs()
+end, {
+  desc = 'Clear all MRReviewer log files'
+})

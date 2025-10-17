@@ -5,6 +5,7 @@
 local M = {}
 local Job = require('plenary.job')
 local errors = require('mrreviewer.errors')
+local logger = require('mrreviewer.logger')
 
 --- Execute a git command synchronously
 --- @param args table Git command arguments (e.g., {'rev-parse', '--abbrev-ref', 'HEAD'})
@@ -14,6 +15,9 @@ local function git_exec(args, opts)
   opts = opts or {}
   local timeout = opts.timeout or 5000
   local cwd = opts.cwd
+
+  local cmd_str = 'git ' .. table.concat(args, ' ')
+  logger.debug('git', 'Executing command: ' .. cmd_str, { cwd = cwd, timeout = timeout })
 
   local job_opts = {
     command = 'git',
@@ -29,24 +33,29 @@ local function git_exec(args, opts)
   end)
 
   if not ok then
-    return nil, errors.git_error('Git command execution failed', {
-      command = 'git ' .. table.concat(args, ' '),
+    local err = errors.git_error('Git command execution failed', {
+      command = cmd_str,
       error = tostring(result),
       cwd = cwd,
     })
+    logger.log_error('git', err)
+    return nil, err
   end
 
   if job.code ~= 0 then
     local stderr = table.concat(job:stderr_result() or {}, '\n')
-    return nil, errors.git_error('Git command failed', {
-      command = 'git ' .. table.concat(args, ' '),
+    local err = errors.git_error('Git command failed', {
+      command = cmd_str,
       exit_code = job.code,
       stderr = stderr ~= '' and stderr or nil,
       cwd = cwd,
     })
+    logger.log_error('git', err)
+    return nil, err
   end
 
   local stdout = table.concat(result or {}, '\n')
+  logger.debug('git', 'Command succeeded: ' .. cmd_str, { output_length = #stdout })
   return stdout, nil
 end
 
@@ -64,9 +73,12 @@ function M.get_current_branch(cwd)
   result = result:match('^%s*(.-)%s*$')
 
   if result == '' then
-    return nil, errors.git_error('Empty branch name returned')
+    local err_obj = errors.git_error('Empty branch name returned')
+    logger.log_error('git', err_obj)
+    return nil, err_obj
   end
 
+  logger.info('git', 'Current branch: ' .. result, { cwd = cwd })
   return result, nil
 end
 
@@ -100,9 +112,12 @@ function M.get_repo_root(cwd)
   result = result:match('^%s*(.-)%s*$')
 
   if result == '' then
-    return nil, errors.git_error('Empty repository root returned')
+    local err_obj = errors.git_error('Empty repository root returned')
+    logger.log_error('git', err_obj)
+    return nil, err_obj
   end
 
+  logger.info('git', 'Repository root: ' .. result)
   return result, nil
 end
 
@@ -123,9 +138,12 @@ function M.get_remote_url(remote_name, cwd)
   result = result:match('^%s*(.-)%s*$')
 
   if result == '' then
-    return nil, errors.git_error('Empty remote URL returned for ' .. remote_name)
+    local err_obj = errors.git_error('Empty remote URL returned for ' .. remote_name)
+    logger.log_error('git', err_obj)
+    return nil, err_obj
   end
 
+  logger.info('git', 'Remote URL for ' .. remote_name .. ': ' .. result)
   return result, nil
 end
 
@@ -155,6 +173,8 @@ end
 --- @param command string Command name to check
 --- @return boolean True if command exists
 function M.command_exists(command)
+  logger.debug('git', 'Checking if command exists: ' .. command)
+
   local job = Job:new({
     command = 'command',
     args = { '-v', command },
@@ -164,7 +184,9 @@ function M.command_exists(command)
     job:sync(2000) -- 2 second timeout
   end)
 
-  return ok and job.code == 0
+  local exists = ok and job.code == 0
+  logger.info('git', 'Command ' .. command .. ' exists: ' .. tostring(exists))
+  return exists
 end
 
 return M

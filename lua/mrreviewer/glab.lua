@@ -5,6 +5,7 @@ local M = {}
 local utils = require('mrreviewer.utils')
 local Job = require('plenary.job')
 local errors = require('mrreviewer.errors')
+local logger = require('mrreviewer.logger')
 
 --- Execute a glab command asynchronously
 --- @param args table Command arguments (e.g., {'mr', 'list', '--output', 'json'})
@@ -15,6 +16,9 @@ function M.execute_async(args, callback, timeout, cwd)
   local config = require('mrreviewer.config')
   local glab_path = config.get_value('glab.path') or 'glab'
   timeout = timeout or config.get_value('glab.timeout') or 30000
+
+  local cmd_str = glab_path .. ' ' .. table.concat(args, ' ')
+  logger.info('glab', 'Executing async command: ' .. cmd_str, { timeout = timeout, cwd = cwd })
 
   -- If no cwd specified, try to get git repo root
   if not cwd then
@@ -28,6 +32,13 @@ function M.execute_async(args, callback, timeout, cwd)
     on_exit = vim.schedule_wrap(function(j, exit_code)
       local stdout = table.concat(j:result(), '\n')
       local stderr = table.concat(j:stderr_result(), '\n')
+
+      if exit_code == 0 then
+        logger.info('glab', 'Async command succeeded: ' .. cmd_str, { output_length = #stdout })
+      else
+        logger.error('glab', 'Async command failed: ' .. cmd_str, { exit_code = exit_code, stderr = stderr })
+      end
+
       callback(exit_code, stdout, stderr)
     end),
   }
@@ -45,6 +56,7 @@ function M.execute_async(args, callback, timeout, cwd)
   if timeout and timeout > 0 then
     vim.defer_fn(function()
       if job and not job.is_shutdown then
+        logger.warn('glab', 'Command timed out: ' .. cmd_str, { timeout = timeout })
         job:shutdown()
         callback(1, '', 'Command timed out after ' .. timeout .. 'ms')
       end
@@ -61,6 +73,9 @@ function M.execute_sync(args, timeout, cwd)
   local config = require('mrreviewer.config')
   local glab_path = config.get_value('glab.path') or 'glab'
   timeout = timeout or config.get_value('glab.timeout') or 30000
+
+  local cmd_str = glab_path .. ' ' .. table.concat(args, ' ')
+  logger.info('glab', 'Executing sync command: ' .. cmd_str, { timeout = timeout, cwd = cwd })
 
   -- If no cwd specified, try to get git repo root
   if not cwd then
@@ -87,9 +102,10 @@ function M.execute_sync(args, timeout, cwd)
 
   if not ok then
     local err = errors.network_error('glab command execution failed', {
-      command = glab_path .. ' ' .. table.concat(args, ' '),
+      command = cmd_str,
       error = tostring(result),
     })
+    logger.log_error('glab', err)
     return nil, nil, nil, err
   end
 
@@ -100,13 +116,15 @@ function M.execute_sync(args, timeout, cwd)
   -- If exit code is non-zero, create an error object but still return the output
   if exit_code ~= 0 then
     local err = errors.network_error('glab command failed', {
-      command = glab_path .. ' ' .. table.concat(args, ' '),
+      command = cmd_str,
       exit_code = exit_code,
       stderr = stderr,
     })
+    logger.log_error('glab', err)
     return exit_code, stdout, stderr, err
   end
 
+  logger.info('glab', 'Sync command succeeded: ' .. cmd_str, { output_length = #stdout })
   return exit_code, stdout, stderr, nil
 end
 
@@ -120,15 +138,19 @@ function M.check_installation()
   local git = require('mrreviewer.git')
   local glab_path = config.get_value('glab.path') or 'glab'
 
+  logger.debug('glab', 'Checking glab installation', { glab_path = glab_path })
+
   -- Check if glab command exists
   if not git.command_exists(glab_path) then
     local err = errors.validation_error('glab CLI is not installed', {
       glab_path = glab_path,
       suggestion = 'Install glab from https://gitlab.com/gitlab-org/cli',
     })
+    logger.log_error('glab', err)
     return false, err
   end
 
+  logger.info('glab', 'glab CLI is installed', { glab_path = glab_path })
   -- Don't check authentication here - it will be validated when actual commands run.
   -- This avoids false errors when multiple GitLab instances are configured and
   -- one has auth issues but the one for the current repo is fine.
