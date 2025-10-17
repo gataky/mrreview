@@ -35,10 +35,10 @@ Generated from: `0002-prd-diffview-style-interface.md`
 - `justfile` - Task runner for common development commands (test, lint, format) ✓ Created
 - `lua/mrreviewer/ui/diffview/layout.lua` - Three-pane window layout management with create_layout(), create_three_pane_windows(), focus_pane(), and close() functions ✓ Created
 - `lua/mrreviewer/ui/diffview/file_panel.lua` - File tree panel with render(), calculate_comment_counts(), natural sorting, highlighting, and keymap setup ✓ Created
+- `lua/mrreviewer/ui/diffview/diff_panel.lua` - Side-by-side diff rendering with render(), update_file(), highlight_comment_line(), scrollbind/cursorbind support ✓ Created
 
 ### New Files to Create
 - `lua/mrreviewer/ui/diffview/init.lua` - Main diffview API and entry point
-- `lua/mrreviewer/ui/diffview/diff_panel.lua` - Side-by-side diff rendering (study diffview.nvim approach)
 - `lua/mrreviewer/ui/diffview/comments_panel.lua` - Comments list with filtering and minimal formatting
 - `lua/mrreviewer/ui/diffview/navigation.lua` - Bidirectional navigation and comment highlighting
 - `tests/diffview_spec.lua` - Unit tests for diffview module
@@ -102,16 +102,16 @@ Generated from: `0002-prd-diffview-style-interface.md`
   - [x] 3.8 Implement `file_panel.get_file_at_cursor()` helper to extract file path from current cursor line
   - [x] 3.9 Implement `file_panel.on_file_selected(file_path)` callback that updates selected file state and triggers diff panel update
 
-- [ ] 4.0 Implement Side-by-Side Diff Rendering
-  - [ ] 4.1 Create `lua/mrreviewer/ui/diffview/diff_panel.lua` module
-  - [ ] 4.2 Research diffview.nvim's diff rendering approach (check their GitHub repo for implementation details, respecting GPL-3.0 license)
-  - [ ] 4.3 Implement `diff_panel.render(mr_data, file_path)` function that creates side-by-side diff in two buffers
-  - [ ] 4.4 Reuse `view.fetch_file_versions()` from `ui/diff/view.lua` to get old and new file content
-  - [ ] 4.5 Set up vertical split for diff windows with `vim.api.nvim_open_win()` and configure diff mode using `vim.wo[win].diff = true`
-  - [ ] 4.6 Implement `diff_panel.highlight_comment_line(line_number, duration)` function using extmarks
-  - [ ] 4.7 Handle highlight duration: if `duration` is nil/0, keep permanent; otherwise, use `vim.defer_fn()` to clear after duration
-  - [ ] 4.8 Implement `diff_panel.update_file(mr_data, file_path)` to reload diff when file selection changes
-  - [ ] 4.9 Handle error cases: missing files, fetch failures (use `utils.notify()` and `logger.log_error()`)
+- [x] 4.0 Implement Side-by-Side Diff Rendering
+  - [x] 4.1 Create `lua/mrreviewer/ui/diffview/diff_panel.lua` module
+  - [x] 4.2 Research diffview.nvim's diff rendering approach (check their GitHub repo for implementation details, respecting GPL-3.0 license)
+  - [x] 4.3 Implement `diff_panel.render(mr_data, file_path)` function that creates side-by-side diff in two buffers
+  - [x] 4.4 Reuse `view.fetch_file_versions()` from `ui/diff/view.lua` to get old and new file content
+  - [x] 4.5 Set up vertical split for diff windows with `vim.api.nvim_open_win()` and configure diff mode using `vim.wo[win].diff = true`
+  - [x] 4.6 Implement `diff_panel.highlight_comment_line(line_number, duration)` function using extmarks
+  - [x] 4.7 Handle highlight duration: if `duration` is nil/0, keep permanent; otherwise, use `vim.defer_fn()` to clear after duration
+  - [x] 4.8 Implement `diff_panel.update_file(mr_data, file_path)` to reload diff when file selection changes
+  - [x] 4.9 Handle error cases: missing files, fetch failures (use `utils.notify()` and `logger.log_error()`)
 
 - [ ] 5.0 Create Comments Panel with Filtering
   - [ ] 5.1 Create `lua/mrreviewer/ui/diffview/comments_panel.lua` module
