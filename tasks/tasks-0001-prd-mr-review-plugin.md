@@ -89,20 +89,20 @@ Generated from: `0001-prd-mr-review-plugin.md`
   - [x] 4.9 Create `diff.close()` function to clean up buffers and windows
   - [x] 4.10 Add scrollbind/cursorbind for synchronized scrolling between buffers
 
-- [ ] 5.0 **Comment Fetching and Display System**
-  - [ ] 5.1 Create `lua/mrreviewer/comments.lua` module for comment handling
-  - [ ] 5.2 Implement `comments.fetch()` to get comments for current MR using glab
-  - [ ] 5.3 Parse comment position data structure (base_sha, head_sha, new_path, old_path, line_range)
-  - [ ] 5.4 Implement `comments.map_to_line()` to convert position data to buffer line numbers
-  - [ ] 5.5 Handle both single-line comments (new_line field) and multi-line comments (line_range)
-  - [ ] 5.6 Filter comments by current file path to show only relevant comments
-  - [ ] 5.7 Implement split buffer display mode: create vertical split with comment list
-  - [ ] 5.8 Format comment display with author, timestamp, body, and resolved status
-  - [ ] 5.9 Implement virtual text display mode using `vim.api.nvim_buf_set_extmark()` with virt_text
-  - [ ] 5.10 Add configuration option to toggle between display modes (config.comment_display_mode)
-  - [ ] 5.11 Create highlight groups for resolved (dimmed) vs unresolved (prominent) comments
-  - [ ] 5.12 Implement comment navigation keymaps (next comment, previous comment)
-  - [ ] 5.13 Add visual indicator (sign column) for lines with comments
+- [x] 5.0 **Comment Fetching and Display System**
+  - [x] 5.1 Create `lua/mrreviewer/comments.lua` module for comment handling
+  - [x] 5.2 Implement `comments.fetch()` to get comments for current MR using glab
+  - [x] 5.3 Parse comment position data structure (base_sha, head_sha, new_path, old_path, line_range)
+  - [x] 5.4 Implement `comments.map_to_line()` to convert position data to buffer line numbers
+  - [x] 5.5 Handle both single-line comments (new_line field) and multi-line comments (line_range)
+  - [x] 5.6 Filter comments by current file path to show only relevant comments
+  - [x] 5.7 Implement split buffer display mode: create vertical split with comment list
+  - [x] 5.8 Format comment display with author, timestamp, body, and resolved status
+  - [x] 5.9 Implement virtual text display mode using `vim.api.nvim_buf_set_extmark()` with virt_text
+  - [x] 5.10 Add configuration option to toggle between display modes (config.comment_display_mode)
+  - [x] 5.11 Create highlight groups for resolved (dimmed) vs unresolved (prominent) comments
+  - [x] 5.12 Implement comment navigation keymaps (next comment, previous comment)
+  - [x] 5.13 Add visual indicator (sign column) for lines with comments
 
 - [ ] 6.0 **Documentation and Testing**
   - [ ] 6.1 Create `README.md` with project description, features, and installation instructions

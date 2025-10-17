@@ -4,6 +4,7 @@
 local M = {}
 local utils = require('mrreviewer.utils')
 local Job = require('plenary.job')
+local comments = require('mrreviewer.comments')
 
 -- Store current diff view state
 M.state = {
@@ -180,13 +181,19 @@ function M.open_file_diff(mr_data, file_info)
   end
 
   -- Create diff view
-  M.create_side_by_side_layout(old_lines, new_lines, file_info)
+  local old_buf, new_buf = M.create_side_by_side_layout(old_lines, new_lines, file_info)
+
+  -- Display comments for the new (source) buffer
+  comments.display_for_file(file_info.new_path or file_info.path, new_buf)
 
   utils.notify('Loaded diff for ' .. file_info.path, 'info')
 end
 
 --- Close the current diff view
 function M.close()
+  -- Clear comments
+  comments.clear()
+
   -- Close windows
   for _, win in pairs(M.state.windows) do
     if vim.api.nvim_win_is_valid(win) then
@@ -274,6 +281,27 @@ local function setup_keymaps()
         noremap = true,
         silent = true,
         desc = 'Close diff view',
+      })
+
+      vim.api.nvim_buf_set_keymap(buf, 'n', keymaps.next_comment or ']c', '', {
+        callback = comments.next_comment,
+        noremap = true,
+        silent = true,
+        desc = 'Next comment',
+      })
+
+      vim.api.nvim_buf_set_keymap(buf, 'n', keymaps.prev_comment or '[c', '', {
+        callback = comments.prev_comment,
+        noremap = true,
+        silent = true,
+        desc = 'Previous comment',
+      })
+
+      vim.api.nvim_buf_set_keymap(buf, 'n', keymaps.toggle_comments or '<leader>tc', '', {
+        callback = comments.toggle_mode,
+        noremap = true,
+        silent = true,
+        desc = 'Toggle comment display mode',
       })
     end
   end
