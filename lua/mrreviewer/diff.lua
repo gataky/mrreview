@@ -14,26 +14,87 @@ M.state = {
   files = {},
 }
 
---- Get changed files from MR data
---- @param mr_data table MR details
+--- Get changed files from MR data using git diff
+--- @param mr_data table MR details with diff_refs
 --- @return table List of changed files
 function M.get_changed_files(mr_data)
   local files = {}
 
-  -- Check if changes exist
-  if not mr_data or not mr_data.changes then
+  if not mr_data then
     return files
   end
 
-  for _, change in ipairs(mr_data.changes) do
-    table.insert(files, {
-      path = change.new_path or change.path,
-      old_path = change.old_path or change.path,
-      new_path = change.new_path or change.path,
-      new_file = change.new_file or false,
-      deleted_file = change.deleted_file or false,
-      renamed_file = change.renamed_file or false,
-    })
+  -- First try to use changes from API if available
+  if mr_data.changes and #mr_data.changes > 0 then
+    for _, change in ipairs(mr_data.changes) do
+      table.insert(files, {
+        path = change.new_path or change.path,
+        old_path = change.old_path or change.path,
+        new_path = change.new_path or change.path,
+        new_file = change.new_file or false,
+        deleted_file = change.deleted_file or false,
+        renamed_file = change.renamed_file or false,
+      })
+    end
+    return files
+  end
+
+  -- Fall back to using git diff to get changed files
+  local base_sha = mr_data.diff_refs and mr_data.diff_refs.base_sha
+  local head_sha = mr_data.diff_refs and mr_data.diff_refs.head_sha
+
+  if not base_sha or not head_sha then
+    utils.notify('Missing diff refs (base_sha/head_sha) in MR data', 'error')
+    return files
+  end
+
+  -- Get repo root for running git commands
+  local project = require('mrreviewer.project')
+  local repo_root = project.get_repo_root()
+
+  -- Ensure we have the commits locally by fetching if needed
+  local fetch_job = Job:new({
+    command = 'git',
+    args = { 'fetch', 'origin', base_sha, head_sha },
+    cwd = repo_root,
+  })
+
+  pcall(function()
+    fetch_job:sync(10000) -- 10 second timeout for fetch
+  end)
+
+  -- Use git diff to get list of changed files
+  local job = Job:new({
+    command = 'git',
+    args = { 'diff', '--name-status', base_sha, head_sha },
+    cwd = repo_root,
+  })
+
+  local ok, result = pcall(function()
+    job:sync(5000)
+    return job:result()
+  end)
+
+  if not ok or job.code ~= 0 then
+    utils.notify('Failed to get changed files using git diff', 'error')
+    return files
+  end
+
+  -- Parse git diff output
+  -- Format is: <status><tab><file_path>
+  -- Status can be: A (added), M (modified), D (deleted), R (renamed)
+  for _, line in ipairs(result) do
+    local status, path = line:match('^(%a)%s+(.+)$')
+    if status and path then
+      table.insert(files, {
+        path = path,
+        old_path = path,
+        new_path = path,
+        new_file = status == 'A',
+        deleted_file = status == 'D',
+        renamed_file = status == 'R',
+      })
+    end
   end
 
   return files
@@ -48,9 +109,14 @@ function M.fetch_file_versions(file_path, ref)
     return nil
   end
 
+  -- Get repo root for running git commands
+  local project = require('mrreviewer.project')
+  local repo_root = project.get_repo_root()
+
   local job = Job:new({
     command = 'git',
     args = { 'show', ref .. ':' .. file_path },
+    cwd = repo_root,
   })
 
   local ok, result = pcall(function()
@@ -66,90 +132,109 @@ function M.fetch_file_versions(file_path, ref)
   return result
 end
 
---- Create side-by-side diff layout
+--- Create unified diff view (single buffer with highlighted changes)
 --- @param old_lines table Lines from target branch
 --- @param new_lines table Lines from source branch
 --- @param file_info table File information
---- @return number, number Buffer numbers for old and new
-function M.create_side_by_side_layout(old_lines, new_lines, file_info)
-  local config = require('mrreviewer.config')
+--- @return number Buffer number
+function M.create_unified_view(old_lines, new_lines, file_info)
+  -- Ensure signs are defined
+  local highlights = require('mrreviewer.highlights')
+  highlights.define_signs()
 
-  -- Save current window
-  local current_win = vim.api.nvim_get_current_win()
+  -- Create a namespace for diff highlights
+  local ns_id = vim.api.nvim_create_namespace('mrreviewer_diff')
 
-  -- Create vertical split
-  vim.cmd('vsplit')
+  -- Get or create the main window
+  local win = vim.api.nvim_get_current_win()
 
-  -- Create buffers
-  local old_buf = vim.api.nvim_create_buf(false, true)
-  local new_buf = vim.api.nvim_create_buf(false, true)
+  -- Create buffer for the new version
+  local buf = vim.api.nvim_create_buf(false, true)
 
-  -- Get windows
-  local left_win = vim.api.nvim_get_current_win()
-  vim.cmd('wincmd h')
-  local right_win = vim.api.nvim_get_current_win()
+  -- Set buffer in window
+  vim.api.nvim_win_set_buf(win, buf)
 
-  -- Set buffers in windows
-  vim.api.nvim_win_set_buf(right_win, old_buf)
-  vim.api.nvim_win_set_buf(left_win, new_buf)
+  -- Set buffer content (new version)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, new_lines)
 
-  -- Set buffer content
-  vim.api.nvim_buf_set_lines(old_buf, 0, -1, false, old_lines)
-  vim.api.nvim_buf_set_lines(new_buf, 0, -1, false, new_lines)
-
-  -- Set buffer options for old (target) file
-  vim.api.nvim_buf_set_option(old_buf, 'buftype', 'nofile')
-  vim.api.nvim_buf_set_option(old_buf, 'bufhidden', 'wipe')
-  vim.api.nvim_buf_set_option(old_buf, 'swapfile', false)
-  vim.api.nvim_buf_set_option(old_buf, 'modifiable', false)
-  vim.api.nvim_buf_set_option(old_buf, 'readonly', true)
+  -- Set buffer options
+  vim.api.nvim_buf_set_option(buf, 'buftype', 'nofile')
+  vim.api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
+  vim.api.nvim_buf_set_option(buf, 'swapfile', false)
+  vim.api.nvim_buf_set_option(buf, 'modifiable', false)
+  vim.api.nvim_buf_set_option(buf, 'readonly', true)
 
   -- Set filetype for syntax highlighting
-  local file_path = file_info.old_path or file_info.path
+  local file_path = file_info.new_path or file_info.path
   if file_path then
     local ft = vim.filetype.match({ filename = file_path })
     if ft then
-      vim.api.nvim_buf_set_option(old_buf, 'filetype', ft)
+      vim.api.nvim_buf_set_option(buf, 'filetype', ft)
     end
   end
 
-  -- Set buffer options for new (source) file
-  vim.api.nvim_buf_set_option(new_buf, 'buftype', 'nofile')
-  vim.api.nvim_buf_set_option(new_buf, 'bufhidden', 'wipe')
-  vim.api.nvim_buf_set_option(new_buf, 'swapfile', false)
-  vim.api.nvim_buf_set_option(new_buf, 'modifiable', false)
-  vim.api.nvim_buf_set_option(new_buf, 'readonly', true)
+  -- Set buffer name
+  vim.api.nvim_buf_set_name(buf, 'MRReviewer://' .. (file_info.new_path or file_info.path))
 
-  -- Set filetype for syntax highlighting
-  file_path = file_info.new_path or file_info.path
-  if file_path then
-    local ft = vim.filetype.match({ filename = file_path })
-    if ft then
-      vim.api.nvim_buf_set_option(new_buf, 'filetype', ft)
+  -- Compute diff and highlight changes
+  local diff_result = vim.diff(table.concat(old_lines, '\n'), table.concat(new_lines, '\n'), {
+    result_type = 'indices',
+    algorithm = 'histogram',
+  })
+
+  -- Apply highlights for changed lines
+  if diff_result then
+    for _, hunk in ipairs(diff_result) do
+      local old_start, old_count, new_start, new_count = hunk[1], hunk[2], hunk[3], hunk[4]
+
+      -- Highlight added lines (green background)
+      if old_count == 0 and new_count > 0 then
+        for i = 0, new_count - 1 do
+          vim.api.nvim_buf_set_extmark(buf, ns_id, new_start - 1 + i, 0, {
+            end_line = new_start + i,
+            hl_group = 'DiffAdd',
+            hl_eol = true,
+            priority = 100,
+          })
+          -- Add sign for added lines
+          vim.fn.sign_place(0, 'MRReviewerDiff', 'MRReviewerDiffAdd', buf, {
+            lnum = new_start + i,
+            priority = 10,
+          })
+        end
+      -- Highlight deleted lines (show as virtual text)
+      elseif old_count > 0 and new_count == 0 then
+        -- Show deletion indicator at the line before
+        local line = math.max(0, new_start - 1)
+        vim.api.nvim_buf_set_extmark(buf, ns_id, line, 0, {
+          virt_lines = { { { string.format('  ▼ %d line(s) deleted', old_count), 'DiffDelete' } } },
+          virt_lines_above = false,
+          priority = 100,
+        })
+      -- Highlight modified lines (yellow background)
+      elseif old_count > 0 and new_count > 0 then
+        for i = 0, new_count - 1 do
+          vim.api.nvim_buf_set_extmark(buf, ns_id, new_start - 1 + i, 0, {
+            end_line = new_start + i,
+            hl_group = 'DiffChange',
+            hl_eol = true,
+            priority = 100,
+          })
+          -- Add sign for changed lines
+          vim.fn.sign_place(0, 'MRReviewerDiff', 'MRReviewerDiffChange', buf, {
+            lnum = new_start + i,
+            priority = 10,
+          })
+        end
+      end
     end
   end
 
-  -- Set buffer names
-  vim.api.nvim_buf_set_name(old_buf, 'MRReviewer://old/' .. (file_info.old_path or file_info.path))
-  vim.api.nvim_buf_set_name(new_buf, 'MRReviewer://new/' .. (file_info.new_path or file_info.path))
+  -- Store state (single buffer now)
+  M.state.buffers = { new = buf }
+  M.state.windows = { new = win }
 
-  -- Enable diff mode
-  vim.api.nvim_win_set_option(right_win, 'diff', true)
-  vim.api.nvim_win_set_option(left_win, 'diff', true)
-
-  -- Enable synchronized scrolling if configured
-  if config.get_value('window.sync_scroll') then
-    vim.api.nvim_win_set_option(right_win, 'scrollbind', true)
-    vim.api.nvim_win_set_option(left_win, 'scrollbind', true)
-    vim.api.nvim_win_set_option(right_win, 'cursorbind', true)
-    vim.api.nvim_win_set_option(left_win, 'cursorbind', true)
-  end
-
-  -- Store state
-  M.state.buffers = { old = old_buf, new = new_buf }
-  M.state.windows = { old = right_win, new = left_win }
-
-  return old_buf, new_buf
+  return buf
 end
 
 --- Open diff view for a specific file in the MR
@@ -180,11 +265,11 @@ function M.open_file_diff(mr_data, file_info)
     return
   end
 
-  -- Create diff view
-  local old_buf, new_buf = M.create_side_by_side_layout(old_lines, new_lines, file_info)
+  -- Create unified diff view
+  local buf = M.create_unified_view(old_lines, new_lines, file_info)
 
-  -- Display comments for the new (source) buffer
-  comments.display_for_file(file_info.new_path or file_info.path, new_buf)
+  -- Display comments for the buffer
+  comments.display_for_file(file_info.new_path or file_info.path, buf)
 
   utils.notify('Loaded diff for ' .. file_info.path, 'info')
 end
@@ -194,10 +279,23 @@ function M.close()
   -- Clear comments
   comments.clear()
 
-  -- Close windows
-  for _, win in pairs(M.state.windows) do
-    if vim.api.nvim_win_is_valid(win) then
-      vim.api.nvim_win_close(win, true)
+  -- Close windows safely (only if not the last window)
+  local total_windows = #vim.api.nvim_list_wins()
+  local windows_to_close = vim.tbl_count(M.state.windows)
+
+  -- Only close windows if there will be at least one window remaining
+  if total_windows > windows_to_close then
+    for _, win in pairs(M.state.windows) do
+      if vim.api.nvim_win_is_valid(win) then
+        pcall(vim.api.nvim_win_close, win, true)
+      end
+    end
+  else
+    -- If these are the last windows, just wipe the buffers instead
+    for _, buf in pairs(M.state.buffers) do
+      if vim.api.nvim_buf_is_valid(buf) then
+        pcall(vim.api.nvim_buf_delete, buf, { force = true })
+      end
     end
   end
 
@@ -224,8 +322,11 @@ function M.next_file()
   local mr_data = mrreviewer.state.current_mr and mrreviewer.state.current_mr.data
 
   if mr_data then
-    M.close()
-    M.open_file_diff(mr_data, M.state.files[M.state.current_file_index])
+    -- Clear comments but keep windows open
+    comments.clear()
+
+    -- Load the new file diff in existing windows
+    M.load_file_in_existing_windows(mr_data, M.state.files[M.state.current_file_index])
   end
 end
 
@@ -245,9 +346,123 @@ function M.prev_file()
   local mr_data = mrreviewer.state.current_mr and mrreviewer.state.current_mr.data
 
   if mr_data then
-    M.close()
-    M.open_file_diff(mr_data, M.state.files[M.state.current_file_index])
+    -- Clear comments but keep windows open
+    comments.clear()
+
+    -- Load the new file diff in existing windows
+    M.load_file_in_existing_windows(mr_data, M.state.files[M.state.current_file_index])
   end
+end
+
+--- Load a new file in existing window
+--- @param mr_data table MR details
+--- @param file_info table File information
+function M.load_file_in_existing_windows(mr_data, file_info)
+  if not mr_data or not file_info then
+    utils.notify('Missing MR data or file info', 'error')
+    return
+  end
+
+  local base_sha = mr_data.diff_refs and mr_data.diff_refs.base_sha
+  local head_sha = mr_data.diff_refs and mr_data.diff_refs.head_sha
+
+  if not base_sha or not head_sha then
+    utils.notify('Missing diff refs in MR data', 'error')
+    return
+  end
+
+  utils.notify('Loading diff for ' .. file_info.path .. '...', 'info')
+
+  -- Fetch file versions
+  local old_lines = M.fetch_file_versions(file_info.old_path, base_sha)
+  local new_lines = M.fetch_file_versions(file_info.new_path, head_sha)
+
+  if not old_lines or not new_lines then
+    utils.notify('Failed to fetch file versions', 'error')
+    return
+  end
+
+  -- Get existing buffer
+  local buf = M.state.buffers.new
+
+  if buf and vim.api.nvim_buf_is_valid(buf) then
+    -- Clear all extmarks from previous file
+    local ns_id = vim.api.nvim_create_namespace('mrreviewer_diff')
+    vim.api.nvim_buf_clear_namespace(buf, ns_id, 0, -1)
+    vim.fn.sign_unplace('MRReviewerDiff', { buffer = buf })
+
+    -- Make buffer modifiable temporarily and do all modifications
+    vim.api.nvim_buf_set_option(buf, 'modifiable', true)
+    vim.api.nvim_buf_set_option(buf, 'readonly', false)
+
+    -- Update buffer content
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, new_lines)
+
+    -- Update buffer name
+    pcall(vim.api.nvim_buf_set_name, buf, 'MRReviewer://' .. (file_info.new_path or file_info.path))
+
+    -- Update filetype
+    local ft = vim.filetype.match({ filename = file_info.new_path or file_info.path })
+    if ft then
+      vim.api.nvim_buf_set_option(buf, 'filetype', ft)
+    end
+
+    -- Set back to readonly
+    vim.api.nvim_buf_set_option(buf, 'modifiable', false)
+    vim.api.nvim_buf_set_option(buf, 'readonly', true)
+
+    -- Re-apply diff highlights
+    local diff_result = vim.diff(table.concat(old_lines, '\n'), table.concat(new_lines, '\n'), {
+      result_type = 'indices',
+      algorithm = 'histogram',
+    })
+
+    if diff_result then
+      for _, hunk in ipairs(diff_result) do
+        local old_start, old_count, new_start, new_count = hunk[1], hunk[2], hunk[3], hunk[4]
+
+        if old_count == 0 and new_count > 0 then
+          for i = 0, new_count - 1 do
+            vim.api.nvim_buf_set_extmark(buf, ns_id, new_start - 1 + i, 0, {
+              end_line = new_start + i,
+              hl_group = 'DiffAdd',
+              hl_eol = true,
+              priority = 100,
+            })
+            vim.fn.sign_place(0, 'MRReviewerDiff', 'MRReviewerDiffAdd', buf, {
+              lnum = new_start + i,
+              priority = 10,
+            })
+          end
+        elseif old_count > 0 and new_count == 0 then
+          local line = math.max(0, new_start - 1)
+          vim.api.nvim_buf_set_extmark(buf, ns_id, line, 0, {
+            virt_lines = { { { string.format('  ▼ %d line(s) deleted', old_count), 'DiffDelete' } } },
+            virt_lines_above = false,
+            priority = 100,
+          })
+        elseif old_count > 0 and new_count > 0 then
+          for i = 0, new_count - 1 do
+            vim.api.nvim_buf_set_extmark(buf, ns_id, new_start - 1 + i, 0, {
+              end_line = new_start + i,
+              hl_group = 'DiffChange',
+              hl_eol = true,
+              priority = 100,
+            })
+            vim.fn.sign_place(0, 'MRReviewerDiff', 'MRReviewerDiffChange', buf, {
+              lnum = new_start + i,
+              priority = 10,
+            })
+          end
+        end
+      end
+    end
+  end
+
+  -- Display comments for the new file
+  comments.display_for_file(file_info.new_path or file_info.path, buf)
+
+  utils.notify('Loaded diff for ' .. file_info.path, 'info')
 end
 
 --- Set up keymaps for diff navigation
@@ -302,6 +517,22 @@ local function setup_keymaps()
         noremap = true,
         silent = true,
         desc = 'Toggle comment display mode',
+      })
+
+      vim.api.nvim_buf_set_keymap(buf, 'n', keymaps.show_comment or 'K', '', {
+        callback = comments.show_float_for_current_line,
+        noremap = true,
+        silent = true,
+        desc = 'Show comment for current line',
+      })
+
+      vim.api.nvim_buf_set_keymap(buf, 'n', keymaps.list_comments or '<leader>cl', '', {
+        callback = function()
+          require('mrreviewer.commands').list_comments()
+        end,
+        noremap = true,
+        silent = true,
+        desc = 'List all comments in MR',
       })
     end
   end

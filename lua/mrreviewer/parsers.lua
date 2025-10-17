@@ -121,8 +121,9 @@ function M.parse_comments(json_str)
     return nil, 'Failed to parse comments JSON: ' .. (err or 'unknown error')
   end
 
-  -- Comments might be in a 'notes' field or at the root
-  local notes = data.notes or data
+  -- Comments might be in 'Notes' (capital N) or 'notes' (lowercase) or at the root
+  -- GitLab API returns capital N, so check that first
+  local notes = data.Notes or data.notes or data
   if type(notes) ~= 'table' then
     return {}, nil
   end
@@ -130,14 +131,15 @@ function M.parse_comments(json_str)
   local comments = {}
   for _, note in ipairs(notes) do
     -- Only include diff notes (comments on code)
-    if note.type == 'DiffNote' or note.noteable_type == 'MergeRequest' then
+    -- Note: We specifically check for 'DiffNote' type, not just noteable_type
+    if note.type == 'DiffNote' then
       local comment = {
         id = note.id,
         body = note.body or '',
         author = {
           username = note.author and note.author.username or 'unknown',
           name = note.author and note.author.name or 'Unknown',
-          avatar_url = note.author and note.author.avatar_url or '',
+          avatar_url = note.author and note.avatar_url or '',
         },
         created_at = note.created_at or '',
         updated_at = note.updated_at or '',

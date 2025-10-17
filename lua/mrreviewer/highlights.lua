@@ -77,6 +77,7 @@ end
 
 --- Define custom signs for the sign column
 function M.define_signs()
+  -- Comment signs
   vim.fn.sign_define('MRReviewerComment', {
     text = '💬',
     texthl = 'MRReviewerSignComment',
@@ -85,6 +86,17 @@ function M.define_signs()
   vim.fn.sign_define('MRReviewerCommentResolved', {
     text = '✓',
     texthl = 'MRReviewerSignCommentResolved',
+  })
+
+  -- Diff signs
+  vim.fn.sign_define('MRReviewerDiffAdd', {
+    text = '+',
+    texthl = 'DiffAdd',
+  })
+
+  vim.fn.sign_define('MRReviewerDiffChange', {
+    text = '~',
+    texthl = 'DiffChange',
   })
 end
 

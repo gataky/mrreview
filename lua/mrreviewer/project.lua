@@ -112,8 +112,30 @@ function M.get_project_info(remote_name)
 end
 
 --- Get current git repository root directory
+--- Tries to detect from current buffer's file path first, then falls back to cwd
 --- @return string|nil Root directory path or nil
 function M.get_repo_root()
+  -- First try to get repo root from current buffer's file path
+  local current_file = vim.api.nvim_buf_get_name(0)
+
+  -- Skip MRReviewer virtual buffers
+  if current_file and current_file ~= '' and not current_file:match('^MRReviewer://') then
+    -- Get directory of current file
+    local file_dir = vim.fn.fnamemodify(current_file, ':h')
+
+    -- Check if this directory is in a git repo
+    local handle = io.popen('cd "' .. file_dir .. '" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null')
+    if handle then
+      local root = handle:read('*a')
+      handle:close()
+
+      if not utils.is_empty(root) then
+        return utils.trim(root)
+      end
+    end
+  end
+
+  -- Fall back to current working directory
   local handle = io.popen('git rev-parse --show-toplevel 2>/dev/null')
   if not handle then
     return nil

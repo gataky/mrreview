@@ -5,8 +5,11 @@ local M = {}
 
 -- Default configuration
 local defaults = {
-  -- Comment display mode: 'split' or 'virtual_text'
-  comment_display_mode = 'split',
+  -- Comment display mode: 'float', 'split', or 'virtual_text'
+  -- 'float': Show comments in floating windows (like diagnostics) - recommended
+  -- 'split': Show all comments in a separate sidebar window
+  -- 'virtual_text': Show comments inline at the end of lines
+  comment_display_mode = 'float',
 
   -- Window layout options
   window = {
@@ -30,8 +33,12 @@ local defaults = {
     prev_comment = '[c',
     -- Close diff view
     close = 'q',
-    -- Toggle comment display mode
+    -- Toggle comment display mode (cycles through float -> split -> virtual_text)
     toggle_comments = '<leader>tc',
+    -- Show comment for current line in floating window (always works, regardless of mode)
+    show_comment = 'K',
+    -- List all comments in MR with Telescope
+    list_comments = '<leader>cl',
   },
 
   -- Highlight group customization

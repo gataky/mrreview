@@ -10,6 +10,8 @@ local highlights = require('mrreviewer.highlights')
 M.state = {
   comment_buffer = nil,
   comment_window = nil,
+  comment_float_win = nil,
+  comment_float_buf = nil,
   displayed_comments = {},
   namespace_id = vim.api.nvim_create_namespace('mrreviewer_comments'),
 }
@@ -99,7 +101,6 @@ function M.display_split(comments, buffer)
   end
 
   if #comments == 0 then
-    utils.notify('No comments for this file', 'info')
     return
   end
 
@@ -194,6 +195,164 @@ function M.display_virtual_text(comments, buffer)
   end
 end
 
+--- Display comments in floating windows (like diagnostics)
+--- @param comments table List of comments to display
+--- @param buffer number Target buffer where diff is shown
+function M.display_float(comments, buffer)
+  if #comments == 0 then
+    return
+  end
+
+  -- Sort comments by line
+  local sorted_comments = parsers.sort_comments_by_line(comments)
+  M.state.displayed_comments = sorted_comments
+
+  -- No need to show anything initially - float will appear on demand
+end
+
+--- Show floating window for comment on current line
+function M.show_float_for_current_line()
+  local buffer = vim.api.nvim_get_current_buf()
+  local current_line = vim.api.nvim_win_get_cursor(0)[1]
+
+  -- If float is already open and valid, enter it
+  if M.state.comment_float_win and vim.api.nvim_win_is_valid(M.state.comment_float_win) then
+    vim.api.nvim_set_current_win(M.state.comment_float_win)
+    return
+  end
+
+  if #M.state.displayed_comments == 0 then
+    return
+  end
+
+  -- Find comment(s) for current line
+  local line_comments = {}
+  for _, comment in ipairs(M.state.displayed_comments) do
+    local line_num = M.map_to_line(comment, buffer)
+    if line_num == current_line then
+      table.insert(line_comments, comment)
+    end
+  end
+
+  if #line_comments == 0 then
+    return
+  end
+
+  -- Format comment(s) for display
+  local lines = {}
+  for i, comment in ipairs(line_comments) do
+    if i > 1 then
+      table.insert(lines, '')
+      table.insert(lines, string.rep('─', 60))
+      table.insert(lines, '')
+    end
+
+    local resolved_marker = comment.resolved and '✓ ' or '• '
+    local resolved_text = comment.resolved and '(resolved)' or '(unresolved)'
+
+    table.insert(lines, resolved_marker .. comment.author.name .. ' ' .. resolved_text)
+
+    if comment.created_at then
+      local date = comment.created_at:match('(%d%d%d%d%-%d%d%-%d%d)')
+      if date then
+        table.insert(lines, date)
+      end
+    end
+
+    table.insert(lines, '')
+
+    -- Add comment body (split by newlines)
+    for line in comment.body:gmatch('[^\r\n]+') do
+      table.insert(lines, line)
+    end
+  end
+
+  -- Create floating window
+  local width = 80
+  local height = math.min(#lines, 20)
+
+  local opts = {
+    relative = 'cursor',
+    row = 1,
+    col = 0,
+    width = width,
+    height = height,
+    style = 'minimal',
+    border = 'rounded',
+    focusable = true,
+    zindex = 50,
+  }
+
+  -- Create buffer for float
+  local float_buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(float_buf, 0, -1, false, lines)
+  vim.api.nvim_buf_set_option(float_buf, 'modifiable', false)
+  vim.api.nvim_buf_set_option(float_buf, 'filetype', 'markdown')
+
+  -- Open floating window (don't focus it initially)
+  local float_win = vim.api.nvim_open_win(float_buf, false, opts)
+
+  -- Store float window
+  M.state.comment_float_win = float_win
+  M.state.comment_float_buf = float_buf
+
+  -- Set window options
+  vim.api.nvim_win_set_option(float_win, 'wrap', true)
+  vim.api.nvim_win_set_option(float_win, 'linebreak', true)
+
+  -- Close float function
+  local close_float = function()
+    if M.state.comment_float_win and vim.api.nvim_win_is_valid(M.state.comment_float_win) then
+      vim.api.nvim_win_close(M.state.comment_float_win, true)
+      M.state.comment_float_win = nil
+      M.state.comment_float_buf = nil
+    end
+  end
+
+  -- Set up autocommands to close the float
+  local float_augroup = vim.api.nvim_create_augroup('MRReviewerFloat', { clear = true })
+
+  -- Close when cursor moves in the main buffer
+  vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
+    group = float_augroup,
+    buffer = buffer,
+    callback = function()
+      -- Only close if we're still in the main buffer (not in the float)
+      if vim.api.nvim_get_current_win() ~= float_win then
+        close_float()
+      end
+    end,
+  })
+
+  -- Close when leaving the float window
+  vim.api.nvim_create_autocmd('WinLeave', {
+    group = float_augroup,
+    buffer = float_buf,
+    callback = function()
+      vim.schedule(close_float)
+    end,
+  })
+
+  -- Close if the main buffer is closed
+  vim.api.nvim_create_autocmd('BufWipeout', {
+    group = float_augroup,
+    buffer = buffer,
+    callback = close_float,
+  })
+
+  -- Add keymaps to close float
+  vim.api.nvim_buf_set_keymap(float_buf, 'n', 'q', '', {
+    callback = close_float,
+    noremap = true,
+    silent = true,
+  })
+  vim.api.nvim_buf_set_keymap(float_buf, 'n', '<Esc>', '', {
+    callback = close_float,
+    noremap = true,
+    silent = true,
+  })
+end
+
 --- Place signs in the sign column for lines with comments
 --- @param comments table List of comments
 --- @param buffer number Target buffer
@@ -210,9 +369,10 @@ function M.place_signs(comments, buffer)
     if line_num then
       local sign_name = comment.resolved and 'MRReviewerCommentResolved' or 'MRReviewerComment'
 
+      -- Use high priority so comment signs show over diff signs
       vim.fn.sign_place(0, 'MRReviewerComments', sign_name, buffer, {
         lnum = line_num,
-        priority = 10,
+        priority = 100,
       })
     end
   end
@@ -234,6 +394,10 @@ function M.display_for_file(file_path, buffer)
   -- Filter comments for this file
   local file_comments = M.filter_by_file(all_comments, file_path)
 
+  if #file_comments == 0 then
+    return
+  end
+
   -- Place signs in sign column
   M.place_signs(file_comments, buffer)
 
@@ -241,6 +405,8 @@ function M.display_for_file(file_path, buffer)
   local mode = config.get_value('comment_display_mode')
   if mode == 'virtual_text' then
     M.display_virtual_text(file_comments, buffer)
+  elseif mode == 'float' then
+    M.display_float(file_comments, buffer)
   else
     M.display_split(file_comments, buffer)
   end
@@ -304,18 +470,24 @@ function M.toggle_mode()
   local config = require('mrreviewer.config')
   local current_mode = config.get_value('comment_display_mode')
 
-  -- Toggle mode
-  local new_mode = current_mode == 'split' and 'virtual_text' or 'split'
-  config.options.comment_display_mode = new_mode
+  -- Cycle through modes: split -> virtual_text -> float -> split
+  local new_mode
+  if current_mode == 'split' then
+    new_mode = 'virtual_text'
+  elseif current_mode == 'virtual_text' then
+    new_mode = 'float'
+  else
+    new_mode = 'split'
+  end
 
-  utils.notify('Comment display mode: ' .. new_mode, 'info')
+  config.options.comment_display_mode = new_mode
 
   -- Refresh display if we have displayed comments
   if #M.state.displayed_comments > 0 then
     local buffer = vim.api.nvim_get_current_buf()
     -- Get file path from buffer name
     local buf_name = vim.api.nvim_buf_get_name(buffer)
-    local file_path = buf_name:match('MRReviewer://new/(.+)') or buf_name:match('MRReviewer://old/(.+)')
+    local file_path = buf_name:match('MRReviewer://(.+)')
 
     if file_path then
       M.display_for_file(file_path, buffer)
@@ -330,6 +502,11 @@ function M.clear()
     vim.api.nvim_win_close(M.state.comment_window, true)
   end
 
+  -- Close float window
+  if M.state.comment_float_win and vim.api.nvim_win_is_valid(M.state.comment_float_win) then
+    vim.api.nvim_win_close(M.state.comment_float_win, true)
+  end
+
   -- Clear virtual text from all buffers
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
     if vim.api.nvim_buf_is_valid(buf) then
@@ -341,6 +518,8 @@ function M.clear()
   -- Clear state
   M.state.comment_buffer = nil
   M.state.comment_window = nil
+  M.state.comment_float_win = nil
+  M.state.comment_float_buf = nil
   M.state.displayed_comments = {}
 end
 

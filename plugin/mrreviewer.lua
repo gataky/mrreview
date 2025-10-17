@@ -27,3 +27,16 @@ end, {
   nargs = 1,
   desc = 'Review a specific merge request by number'
 })
+
+vim.api.nvim_create_user_command('MRDebugJSON', function(opts)
+  require('mrreviewer.commands').debug_json(opts.args)
+end, {
+  nargs = 1,
+  desc = 'Debug: dump raw JSON from glab for an MR'
+})
+
+vim.api.nvim_create_user_command('MRComments', function()
+  require('mrreviewer.commands').list_comments()
+end, {
+  desc = 'List all comments in current MR using Telescope'
+})

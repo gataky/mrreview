@@ -9,12 +9,19 @@ local Job = require('plenary.job')
 --- @param args table Command arguments (e.g., {'mr', 'list', '--output', 'json'})
 --- @param callback function Callback function(exit_code, stdout, stderr)
 --- @param timeout number|nil Timeout in milliseconds (default: 30000)
-function M.execute_async(args, callback, timeout)
+--- @param cwd string|nil Working directory (defaults to git repo root)
+function M.execute_async(args, callback, timeout, cwd)
   local config = require('mrreviewer.config')
   local glab_path = config.get_value('glab.path') or 'glab'
   timeout = timeout or config.get_value('glab.timeout') or 30000
 
-  local job = Job:new({
+  -- If no cwd specified, try to get git repo root
+  if not cwd then
+    local project = require('mrreviewer.project')
+    cwd = project.get_repo_root()
+  end
+
+  local job_opts = {
     command = glab_path,
     args = args,
     on_exit = vim.schedule_wrap(function(j, exit_code)
@@ -22,7 +29,14 @@ function M.execute_async(args, callback, timeout)
       local stderr = table.concat(j:stderr_result(), '\n')
       callback(exit_code, stdout, stderr)
     end),
-  })
+  }
+
+  -- Set working directory if available
+  if cwd then
+    job_opts.cwd = cwd
+  end
+
+  local job = Job:new(job_opts)
 
   job:start()
 
@@ -40,16 +54,30 @@ end
 --- Execute a glab command synchronously (blocking)
 --- @param args table Command arguments
 --- @param timeout number|nil Timeout in milliseconds
+--- @param cwd string|nil Working directory (defaults to git repo root)
 --- @return number, string, string exit_code, stdout, stderr
-function M.execute_sync(args, timeout)
+function M.execute_sync(args, timeout, cwd)
   local config = require('mrreviewer.config')
   local glab_path = config.get_value('glab.path') or 'glab'
   timeout = timeout or config.get_value('glab.timeout') or 30000
 
-  local job = Job:new({
+  -- If no cwd specified, try to get git repo root
+  if not cwd then
+    local project = require('mrreviewer.project')
+    cwd = project.get_repo_root()
+  end
+
+  local job_opts = {
     command = glab_path,
     args = args,
-  })
+  }
+
+  -- Set working directory if available
+  if cwd then
+    job_opts.cwd = cwd
+  end
+
+  local job = Job:new(job_opts)
 
   -- Start job and wait for completion
   job:sync(timeout)
@@ -61,7 +89,10 @@ function M.execute_sync(args, timeout)
   return exit_code, stdout, stderr
 end
 
---- Check if glab is installed and authenticated
+--- Check if glab is installed
+--- Note: This only checks if the glab binary exists, not authentication status.
+--- Authentication will be validated naturally when actual glab commands are run,
+--- and glab will automatically use the correct GitLab instance based on git remote.
 --- @return boolean, string Returns true if ready, or false and error message
 function M.check_installation()
   local config = require('mrreviewer.config')
@@ -80,16 +111,9 @@ function M.check_installation()
     return false, 'glab CLI is not installed. Please install it from https://gitlab.com/gitlab-org/cli'
   end
 
-  -- Check authentication status
-  local exit_code, output, stderr = M.execute_sync({ 'auth', 'status' }, 5000)
-
-  if exit_code ~= 0 then
-    if output:match('not authenticated') or stderr:match('not authenticated') then
-      return false, 'glab is not authenticated. Please run: glab auth login'
-    end
-    return false, 'Failed to check glab authentication status: ' .. (stderr or output)
-  end
-
+  -- Don't check authentication here - it will be validated when actual commands run.
+  -- This avoids false errors when multiple GitLab instances are configured and
+  -- one has auth issues but the one for the current repo is fine.
   return true, nil
 end
 
@@ -98,14 +122,25 @@ end
 --- @return table Command arguments
 function M.build_mr_list_args(state)
   state = state or 'opened'
-  return {
+
+  local args = {
     'mr',
     'list',
-    '--state',
-    state,
     '--output',
     'json',
   }
+
+  -- Add state flag if not 'opened' (opened is the default)
+  if state == 'closed' then
+    table.insert(args, '--closed')
+  elseif state == 'merged' then
+    table.insert(args, '--merged')
+  elseif state == 'all' then
+    table.insert(args, '--all')
+  end
+  -- 'opened' is default, no flag needed
+
+  return args
 end
 
 --- Build glab command arguments for viewing an MR

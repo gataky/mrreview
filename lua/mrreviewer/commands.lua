@@ -186,4 +186,142 @@ function M.review(mr_number)
   end)
 end
 
+--- Debug command to dump raw JSON from glab
+--- @param mr_number string|number MR number
+function M.debug_json(mr_number)
+  if not mr_number or mr_number == '' then
+    utils.notify('MR number is required', 'error')
+    return
+  end
+
+  local args = glab.build_mr_view_args(mr_number, true)
+  glab.execute_async(args, function(exit_code, stdout, stderr)
+    if exit_code ~= 0 then
+      utils.notify('Failed to fetch MR: ' .. stderr, 'error')
+      return
+    end
+
+    -- Write to temp file
+    local temp_file = '/tmp/mrreviewer_debug_' .. mr_number .. '.json'
+    local file = io.open(temp_file, 'w')
+    if file then
+      file:write(stdout)
+      file:close()
+      utils.notify('JSON written to: ' .. temp_file, 'info')
+      vim.cmd('edit ' .. temp_file)
+    else
+      utils.notify('Failed to write debug file', 'error')
+    end
+  end)
+end
+
+--- List all comments in current MR using Telescope
+function M.list_comments()
+  local mrreviewer = require('mrreviewer')
+
+  -- Check if we have an MR loaded
+  if not mrreviewer.state.current_mr or not mrreviewer.state.current_mr.comments then
+    utils.notify('No MR loaded. Please open an MR first with :MRReview or :MRList', 'warn')
+    return
+  end
+
+  local comments = mrreviewer.state.current_mr.comments
+  if #comments == 0 then
+    utils.notify('No comments in this MR', 'info')
+    return
+  end
+
+  -- Check if Telescope is available
+  local has_telescope, telescope = pcall(require, 'telescope')
+  if not has_telescope then
+    utils.notify('Telescope.nvim is required for this feature', 'error')
+    return
+  end
+
+  local pickers = require('telescope.pickers')
+  local finders = require('telescope.finders')
+  local conf = require('telescope.config').values
+  local actions = require('telescope.actions')
+  local action_state = require('telescope.actions.state')
+
+  -- Format comments for display
+  local entries = {}
+  for _, comment in ipairs(comments) do
+    local resolved = comment.resolved and '✓' or '•'
+    local file = comment.position and comment.position.new_path or 'unknown'
+    local line = comment.position and comment.position.new_line or '?'
+    local author = comment.author.username or comment.author.name
+    local body_preview = comment.body:gsub('\n', ' '):sub(1, 80)
+
+    table.insert(entries, {
+      display = string.format('%s %s:%s - %s: %s', resolved, file, line, author, body_preview),
+      ordinal = string.format('%s %s %s', file, author, comment.body),
+      file = file,
+      line = line,
+      comment = comment,
+    })
+  end
+
+  pickers.new({}, {
+    prompt_title = 'MR Comments',
+    finder = finders.new_table({
+      results = entries,
+      entry_maker = function(entry)
+        return {
+          value = entry,
+          display = entry.display,
+          ordinal = entry.ordinal,
+        }
+      end,
+    }),
+    sorter = conf.generic_sorter({}),
+    attach_mappings = function(prompt_bufnr, map)
+      actions.select_default:replace(function()
+        actions.close(prompt_bufnr)
+        local selection = action_state.get_selected_entry()
+        if not selection then
+          return
+        end
+
+        local entry = selection.value
+        local mr_data = mrreviewer.state.current_mr.data
+
+        -- Find the file in the MR
+        local diff_mod = require('mrreviewer.diff')
+        local files = diff_mod.get_changed_files(mr_data)
+
+        -- Find matching file
+        local file_info = nil
+        for _, file in ipairs(files) do
+          if file.new_path == entry.file or file.path == entry.file then
+            file_info = file
+            break
+          end
+        end
+
+        if not file_info then
+          utils.notify('Could not find file: ' .. entry.file, 'error')
+          return
+        end
+
+        -- Open the file
+        diff_mod.open_file_diff(mr_data, file_info)
+
+        -- Jump to the comment line
+        if entry.line and entry.line ~= '?' then
+          vim.schedule(function()
+            pcall(vim.api.nvim_win_set_cursor, 0, { tonumber(entry.line), 0 })
+            -- Show the comment float
+            vim.defer_fn(function()
+              local comment_mod = require('mrreviewer.comments')
+              comment_mod.show_float_for_current_line()
+            end, 100)
+          end)
+        end
+      end)
+      return true
+    end,
+  }):find()
+end
+
 return M
