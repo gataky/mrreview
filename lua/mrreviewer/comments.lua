@@ -5,6 +5,7 @@ local M = {}
 local utils = require('mrreviewer.utils')
 local parsers = require('mrreviewer.parsers')
 local highlights = require('mrreviewer.highlights')
+local position = require('mrreviewer.position')
 
 -- State for comment display
 M.state = {
@@ -29,24 +30,7 @@ end
 --- @param buffer number Buffer number
 --- @return number|nil Line number in buffer (1-indexed) or nil
 function M.map_to_line(comment, buffer)
-  if not comment.position then
-    return nil
-  end
-
-  -- Use new_line for the source/head branch (the buffer we're displaying)
-  local line = comment.position.new_line
-
-  if not line or line <= 0 then
-    return nil
-  end
-
-  -- Ensure line is within buffer bounds
-  local line_count = vim.api.nvim_buf_line_count(buffer)
-  if line > line_count then
-    return nil
-  end
-
-  return line
+  return position.map_comment_to_line(comment, buffer)
 end
 
 --- Format comment for display

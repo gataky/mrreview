@@ -2,6 +2,7 @@
 -- Configuration management with user settings and defaults
 
 local M = {}
+local utils = require('mrreviewer.utils')
 
 -- Default configuration
 local defaults = {
@@ -67,21 +68,6 @@ local defaults = {
 -- Current active configuration
 M.options = {}
 
---- Deep merge two tables
---- @param target table
---- @param source table
---- @return table
-local function merge(target, source)
-  for key, value in pairs(source) do
-    if type(value) == 'table' and type(target[key]) == 'table' then
-      target[key] = merge(target[key], value)
-    else
-      target[key] = value
-    end
-  end
-  return target
-end
-
 --- Setup configuration with user options
 --- @param opts table|nil User configuration options
 function M.setup(opts)
@@ -91,7 +77,7 @@ function M.setup(opts)
   M.options = vim.deepcopy(defaults)
 
   -- Merge user options
-  M.options = merge(M.options, opts)
+  M.options = utils.merge_tables(M.options, opts)
 end
 
 --- Get current configuration

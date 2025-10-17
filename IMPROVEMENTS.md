@@ -69,15 +69,18 @@
 
 ## Priority 2: Code Quality (Should Fix)
 
-### 2.1 Eliminate Code Duplication
+### 2.1 Eliminate Code Duplication ✅ COMPLETE
 **Estimated effort:** 2-3 hours
+**Completed:** 2025-01-17
 
-- [ ] Remove duplicate `merge_tables()` from `config.lua`
-  - Use `utils.merge_tables()` everywhere
-- [ ] Create `git.lua` to centralize git operations
-  - Extract from `utils.lua` and `project.lua`
-- [ ] Create `position.lua` to centralize line mapping
-  - Extract from `comments.lua`
+- [x] Remove duplicate `merge_tables()` from `config.lua`
+  - Use `utils.merge_tables()` everywhere ✓
+- [x] Create `git.lua` to centralize git operations ✅ Already complete (Task 1.2)
+  - Extract from `utils.lua` and `project.lua` ✓
+- [x] Create `position.lua` to centralize line mapping
+  - Extract from `comments.lua` ✓
+  - Created new `position.lua` module with `map_comment_to_line()` function
+  - Refactored `comments.lua` to delegate to position module
 
 ### 2.2 Refactor Large Modules
 **Estimated effort:** 6-8 hours
@@ -342,12 +345,17 @@ lua/mrreviewer/comments/
   - [x] 1.1 Replace Deprecated APIs
   - [x] 1.2 Refactor Shell Commands
   - [x] 1.3 Add Test Coverage
-- [ ] Phase 2 Complete (0/5 tasks)
+- [ ] Phase 2 Complete (1/5 tasks) - IN PROGRESS
+  - [x] 2.1 Eliminate Code Duplication
+  - [ ] 2.2 Refactor Large Modules
+  - [ ] 2.3 Standardize Error Handling
+  - [ ] 2.4 Centralize State Management
+  - [ ] 2.5 Implement Logging System
 - [ ] Phase 3 Complete (0/4 tasks)
 - [ ] Phase 4 Complete (0/3 tasks)
 - [ ] Phase 5 Complete (0/1 tasks)
 
-**Overall Progress:** 3/16 major tasks complete (18.75%)
+**Overall Progress:** 4/16 major tasks complete (25%)
 
 ---
 
