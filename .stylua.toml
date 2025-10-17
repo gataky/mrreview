@@ -1,0 +1,23 @@
+# StyLua Configuration
+# Ensures consistent Lua code formatting across the mrreviewer project
+
+# Maximum line width before wrapping
+column_width = 100
+
+# Line ending style
+line_endings = "Unix"
+
+# Use spaces for indentation
+indent_type = "Spaces"
+
+# Number of spaces per indent level
+indent_width = 4
+
+# Prefer single quotes, but auto-convert if needed
+quote_style = "AutoPreferSingle"
+
+# Collapse simple statement into one line
+collapse_simple_statement = "Never"
+
+# Call parentheses style
+call_parentheses = "Always"

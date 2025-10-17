@@ -276,7 +276,7 @@ lua/mrreviewer/comments/
 ### 4.1 Development Infrastructure
 **Estimated effort:** 3-4 hours
 
-- [ ] Add `.stylua.toml` for consistent formatting
+- [x] Add `.stylua.toml` for consistent formatting
   ```toml
   column_width = 100
   line_endings = "Unix"
@@ -284,17 +284,17 @@ lua/mrreviewer/comments/
   indent_width = 2
   quote_style = "AutoPreferSingle"
   ```
-- [ ] Add `.luacheckrc` for linting
-- [ ] Add `.editorconfig`
+- [x] Add `.luacheckrc` for linting
+- [x] Add `.editorconfig`
 - [ ] Set up GitHub Actions CI
   - [ ] Run tests on PR
   - [ ] Check formatting
   - [ ] Run linter
   - [ ] Generate coverage report
-- [ ] Add pre-commit hooks
-  - [ ] Format with stylua
-  - [ ] Run luacheck
-  - [ ] Run tests
+- [x] Add pre-commit hooks
+  - [x] Format with stylua
+  - [x] Run luacheck
+  - [x] Run tests
 
 ### 4.2 Documentation
 **Estimated effort:** 4-5 hours
