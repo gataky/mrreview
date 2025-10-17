@@ -54,17 +54,17 @@ Generated from: `0001-prd-mr-review-plugin.md`
   - [x] 1.6 Create `lua/mrreviewer/highlights.lua` to define highlight groups for diff and comments
   - [x] 1.7 Add `.luarc.json` for Lua LSP configuration and development
 
-- [ ] 2.0 **GitLab Integration Layer**
-  - [ ] 2.1 Create `lua/mrreviewer/glab.lua` module for CLI interactions
-  - [ ] 2.2 Implement `glab.check_installation()` to verify glab is installed and authenticated
-  - [ ] 2.3 Implement `glab.execute_async()` using `vim.loop` (libuv) for non-blocking command execution
-  - [ ] 2.4 Create `lua/mrreviewer/project.lua` with `get_project_info()` to detect GitLab project from git remote
-  - [ ] 2.5 Create `lua/mrreviewer/parsers.lua` module for JSON parsing
-  - [ ] 2.6 Implement `parsers.parse_mr_list()` to parse output from `glab mr list --output json`
-  - [ ] 2.7 Implement `parsers.parse_mr_details()` to parse output from `glab mr view <id> --output json`
-  - [ ] 2.8 Implement `parsers.parse_comments()` to parse output from `glab mr view <id> --comments --output json`
-  - [ ] 2.9 Add comprehensive error handling for network failures, invalid JSON, and authentication errors
-  - [ ] 2.10 Implement error notification system using `vim.notify()` with appropriate log levels
+- [x] 2.0 **GitLab Integration Layer**
+  - [x] 2.1 Create `lua/mrreviewer/glab.lua` module for CLI interactions
+  - [x] 2.2 Implement `glab.check_installation()` to verify glab is installed and authenticated
+  - [x] 2.3 Implement `glab.execute_async()` using `vim.loop` (libuv) for non-blocking command execution
+  - [x] 2.4 Create `lua/mrreviewer/project.lua` with `get_project_info()` to detect GitLab project from git remote
+  - [x] 2.5 Create `lua/mrreviewer/parsers.lua` module for JSON parsing
+  - [x] 2.6 Implement `parsers.parse_mr_list()` to parse output from `glab mr list --output json`
+  - [x] 2.7 Implement `parsers.parse_mr_details()` to parse output from `glab mr view <id> --output json`
+  - [x] 2.8 Implement `parsers.parse_comments()` to parse output from `glab mr view <id> --comments --output json`
+  - [x] 2.9 Add comprehensive error handling for network failures, invalid JSON, and authentication errors
+  - [x] 2.10 Implement error notification system using `vim.notify()` with appropriate log levels
 
 - [ ] 3.0 **MR Discovery and Selection Interface**
   - [ ] 3.1 Create `lua/mrreviewer/commands.lua` module to register Neovim commands
