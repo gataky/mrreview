@@ -4,11 +4,12 @@
 
 local M = {}
 local Job = require('plenary.job')
+local errors = require('mrreviewer.errors')
 
 --- Execute a git command synchronously
 --- @param args table Git command arguments (e.g., {'rev-parse', '--abbrev-ref', 'HEAD'})
 --- @param opts table|nil Options: cwd (string), timeout (number in ms, default 5000)
---- @return boolean, string|nil Success status and result/error message
+--- @return string|nil, table|nil Result string or nil, and error object or nil
 local function git_exec(args, opts)
   opts = opts or {}
   local timeout = opts.timeout or 5000
@@ -28,45 +29,54 @@ local function git_exec(args, opts)
   end)
 
   if not ok then
-    return false, 'Git command failed: ' .. tostring(result)
+    return nil, errors.git_error('Git command execution failed', {
+      command = 'git ' .. table.concat(args, ' '),
+      error = tostring(result),
+      cwd = cwd,
+    })
   end
 
   if job.code ~= 0 then
     local stderr = table.concat(job:stderr_result() or {}, '\n')
-    return false, stderr ~= '' and stderr or 'Git command exited with code ' .. job.code
+    return nil, errors.git_error('Git command failed', {
+      command = 'git ' .. table.concat(args, ' '),
+      exit_code = job.code,
+      stderr = stderr ~= '' and stderr or nil,
+      cwd = cwd,
+    })
   end
 
   local stdout = table.concat(result or {}, '\n')
-  return true, stdout
+  return stdout, nil
 end
 
 --- Get current git branch name
 --- @param cwd string|nil Working directory (defaults to current)
---- @return string|nil Branch name or nil if not in a git repo
+--- @return string|nil, table|nil Branch name or nil, and error object or nil
 function M.get_current_branch(cwd)
-  local ok, result = git_exec({ 'rev-parse', '--abbrev-ref', 'HEAD' }, { cwd = cwd })
+  local result, err = git_exec({ 'rev-parse', '--abbrev-ref', 'HEAD' }, { cwd = cwd })
 
-  if not ok then
-    return nil
+  if not result then
+    return nil, errors.wrap('Failed to get current branch', err)
   end
 
   -- Trim whitespace
   result = result:match('^%s*(.-)%s*$')
 
   if result == '' then
-    return nil
+    return nil, errors.git_error('Empty branch name returned')
   end
 
-  return result
+  return result, nil
 end
 
 --- Check if currently in a git repository
 --- @param cwd string|nil Working directory (defaults to current)
 --- @return boolean True if inside a git repository
 function M.is_git_repo(cwd)
-  local ok, result = git_exec({ 'rev-parse', '--is-inside-work-tree' }, { cwd = cwd })
+  local result, err = git_exec({ 'rev-parse', '--is-inside-work-tree' }, { cwd = cwd })
 
-  if not ok then
+  if not result then
     return false
   end
 
@@ -78,65 +88,66 @@ end
 
 --- Get git repository root directory
 --- @param cwd string|nil Working directory to check (defaults to current)
---- @return string|nil Root directory path or nil if not in a repo
+--- @return string|nil, table|nil Root directory path or nil, and error object or nil
 function M.get_repo_root(cwd)
-  local ok, result = git_exec({ 'rev-parse', '--show-toplevel' }, { cwd = cwd })
+  local result, err = git_exec({ 'rev-parse', '--show-toplevel' }, { cwd = cwd })
 
-  if not ok then
-    return nil
+  if not result then
+    return nil, errors.wrap('Failed to get repository root', err)
   end
 
   -- Trim whitespace
   result = result:match('^%s*(.-)%s*$')
 
   if result == '' then
-    return nil
+    return nil, errors.git_error('Empty repository root returned')
   end
 
-  return result
+  return result, nil
 end
 
 --- Get git remote URL
 --- @param remote_name string|nil Remote name (default: 'origin')
 --- @param cwd string|nil Working directory (defaults to current)
---- @return string|nil Remote URL or nil if not found
+--- @return string|nil, table|nil Remote URL or nil, and error object or nil
 function M.get_remote_url(remote_name, cwd)
   remote_name = remote_name or 'origin'
 
-  local ok, result = git_exec({ 'remote', 'get-url', remote_name }, { cwd = cwd })
+  local result, err = git_exec({ 'remote', 'get-url', remote_name }, { cwd = cwd })
 
-  if not ok then
-    return nil
+  if not result then
+    return nil, errors.wrap('Failed to get remote URL for ' .. remote_name, err)
   end
 
   -- Trim whitespace
   result = result:match('^%s*(.-)%s*$')
 
   if result == '' then
-    return nil
+    return nil, errors.git_error('Empty remote URL returned for ' .. remote_name)
   end
 
-  return result
+  return result, nil
 end
 
 --- Get the upstream tracking branch for current branch
 --- @param cwd string|nil Working directory (defaults to current)
---- @return string|nil Upstream branch name or nil
+--- @return string|nil, table|nil Upstream branch name or nil, and error object or nil
 function M.get_upstream_branch(cwd)
-  local ok, result = git_exec({ 'rev-parse', '--abbrev-ref', '@{upstream}' }, { cwd = cwd })
+  local result, err = git_exec({ 'rev-parse', '--abbrev-ref', '@{upstream}' }, { cwd = cwd })
 
-  if not ok then
-    return nil
+  if not result then
+    -- Upstream not configured is common, so just return nil without detailed error
+    return nil, nil
   end
 
   -- Trim whitespace
   result = result:match('^%s*(.-)%s*$')
 
   if result == '' then
-    return nil
+    return nil, nil
   end
 
-  return result
+  return result, nil
 end
 
 --- Check if a command exists in PATH

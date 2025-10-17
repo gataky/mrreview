@@ -4,6 +4,7 @@
 local M = {}
 local utils = require('mrreviewer.utils')
 local Job = require('plenary.job')
+local errors = require('mrreviewer.errors')
 
 --- Execute a glab command asynchronously
 --- @param args table Command arguments (e.g., {'mr', 'list', '--output', 'json'})
@@ -55,7 +56,7 @@ end
 --- @param args table Command arguments
 --- @param timeout number|nil Timeout in milliseconds
 --- @param cwd string|nil Working directory (defaults to git repo root)
---- @return number, string, string exit_code, stdout, stderr
+--- @return number|nil, string|nil, string|nil, table|nil exit_code, stdout, stderr, error object
 function M.execute_sync(args, timeout, cwd)
   local config = require('mrreviewer.config')
   local glab_path = config.get_value('glab.path') or 'glab'
@@ -79,21 +80,41 @@ function M.execute_sync(args, timeout, cwd)
 
   local job = Job:new(job_opts)
 
-  -- Start job and wait for completion
-  job:sync(timeout)
+  -- Wrap execution in error handling
+  local ok, result = pcall(function()
+    job:sync(timeout)
+  end)
+
+  if not ok then
+    local err = errors.network_error('glab command execution failed', {
+      command = glab_path .. ' ' .. table.concat(args, ' '),
+      error = tostring(result),
+    })
+    return nil, nil, nil, err
+  end
 
   local stdout = table.concat(job:result(), '\n')
   local stderr = table.concat(job:stderr_result(), '\n')
   local exit_code = job.code or 0
 
-  return exit_code, stdout, stderr
+  -- If exit code is non-zero, create an error object but still return the output
+  if exit_code ~= 0 then
+    local err = errors.network_error('glab command failed', {
+      command = glab_path .. ' ' .. table.concat(args, ' '),
+      exit_code = exit_code,
+      stderr = stderr,
+    })
+    return exit_code, stdout, stderr, err
+  end
+
+  return exit_code, stdout, stderr, nil
 end
 
 --- Check if glab is installed
 --- Note: This only checks if the glab binary exists, not authentication status.
 --- Authentication will be validated naturally when actual glab commands are run,
 --- and glab will automatically use the correct GitLab instance based on git remote.
---- @return boolean, string Returns true if ready, or false and error message
+--- @return boolean, table|nil Returns true if ready, or false and error object
 function M.check_installation()
   local config = require('mrreviewer.config')
   local git = require('mrreviewer.git')
@@ -101,7 +122,11 @@ function M.check_installation()
 
   -- Check if glab command exists
   if not git.command_exists(glab_path) then
-    return false, 'glab CLI is not installed. Please install it from https://gitlab.com/gitlab-org/cli'
+    local err = errors.validation_error('glab CLI is not installed', {
+      glab_path = glab_path,
+      suggestion = 'Install glab from https://gitlab.com/gitlab-org/cli',
+    })
+    return false, err
   end
 
   -- Don't check authentication here - it will be validated when actual commands run.

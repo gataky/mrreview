@@ -191,8 +191,9 @@ describe('project', function()
   describe('get_project_info', function()
     it('returns project info for GitLab repos', function()
       -- This test will only pass if we're in a GitLab repo
-      -- Otherwise it should return nil with error message
+      -- Otherwise it should return nil with error object
       local info, err = project.get_project_info()
+      local errors = require('mrreviewer.errors')
 
       if info then
         -- If successful, verify structure
@@ -203,17 +204,18 @@ describe('project', function()
         assert.is_string(info.full_path)
         assert.is_true(info.host:match('gitlab') ~= nil)
       else
-        -- If failed, should have error message
-        assert.is_string(err)
-        assert.is_true(#err > 0)
+        -- If failed, should have error object
+        assert.is_true(errors.is_error(err))
+        assert.is_string(err.message)
       end
     end)
 
     it('accepts custom remote name', function()
       local info, err = project.get_project_info('upstream')
+      local errors = require('mrreviewer.errors')
       -- May fail if upstream doesn't exist or isn't GitLab
       if not info then
-        assert.is_string(err)
+        assert.is_true(errors.is_error(err))
       end
     end)
 
@@ -221,8 +223,9 @@ describe('project', function()
       -- We can't easily test this without having a non-GitLab remote
       -- but we verify the function signature works
       local info, err = project.get_project_info('nonexistent_remote')
+      local errors = require('mrreviewer.errors')
       assert.is_nil(info)
-      assert.is_string(err)
+      assert.is_true(errors.is_error(err))
     end)
   end)
 
