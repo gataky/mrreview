@@ -34,10 +34,10 @@ Generated from: `0002-prd-diffview-style-interface.md`
 
 - `justfile` - Task runner for common development commands (test, lint, format) ✓ Created
 - `lua/mrreviewer/ui/diffview/layout.lua` - Three-pane window layout management with create_layout(), create_three_pane_windows(), focus_pane(), and close() functions ✓ Created
+- `lua/mrreviewer/ui/diffview/file_panel.lua` - File tree panel with render(), calculate_comment_counts(), natural sorting, highlighting, and keymap setup ✓ Created
 
 ### New Files to Create
 - `lua/mrreviewer/ui/diffview/init.lua` - Main diffview API and entry point
-- `lua/mrreviewer/ui/diffview/file_panel.lua` - File tree with comment count indicators
 - `lua/mrreviewer/ui/diffview/diff_panel.lua` - Side-by-side diff rendering (study diffview.nvim approach)
 - `lua/mrreviewer/ui/diffview/comments_panel.lua` - Comments list with filtering and minimal formatting
 - `lua/mrreviewer/ui/diffview/navigation.lua` - Bidirectional navigation and comment highlighting
@@ -91,16 +91,16 @@ Generated from: `0002-prd-diffview-style-interface.md`
   - [x] 2.6 Add buffer options for each pane: `buftype='nofile'`, `bufhidden='wipe'`, `swapfile=false`
   - [x] 2.7 Set window options: `wrap=false`, `cursorline=true`, appropriate buffer names ('MRReviewer Files', 'MRReviewer Diff', 'MRReviewer Comments')
 
-- [ ] 3.0 Build File Panel with Comment Indicators
-  - [ ] 3.1 Create `lua/mrreviewer/ui/diffview/file_panel.lua` module
-  - [ ] 3.2 Implement `file_panel.render(files, comments)` function that populates the file tree buffer
-  - [ ] 3.3 Implement `file_panel.calculate_comment_counts(file_path, comments)` helper function returning `{resolved: number, total: number}`
-  - [ ] 3.4 Format each file line as: `"  <filename>  💬 <resolved>/<total>"` (or just `"  <filename>"` if no comments)
-  - [ ] 3.5 Implement natural file system ordering using Lua's `table.sort()` with path comparison (directories before files, alphabetical within each)
-  - [ ] 3.6 Apply highlighting to currently selected file using extmarks (highlight group: `MRReviewerSelectedComment`)
-  - [ ] 3.7 Implement `file_panel.setup_keymaps(buf)` for `j`/`k` navigation and `<Enter>` to select file
-  - [ ] 3.8 Implement `file_panel.get_file_at_cursor()` helper to extract file path from current cursor line
-  - [ ] 3.9 Implement `file_panel.on_file_selected(file_path)` callback that updates selected file state and triggers diff panel update
+- [x] 3.0 Build File Panel with Comment Indicators
+  - [x] 3.1 Create `lua/mrreviewer/ui/diffview/file_panel.lua` module
+  - [x] 3.2 Implement `file_panel.render(files, comments)` function that populates the file tree buffer
+  - [x] 3.3 Implement `file_panel.calculate_comment_counts(file_path, comments)` helper function returning `{resolved: number, total: number}`
+  - [x] 3.4 Format each file line as: `"  <filename>  💬 <resolved>/<total>"` (or just `"  <filename>"` if no comments)
+  - [x] 3.5 Implement natural file system ordering using Lua's `table.sort()` with path comparison (directories before files, alphabetical within each)
+  - [x] 3.6 Apply highlighting to currently selected file using extmarks (highlight group: `MRReviewerSelectedComment`)
+  - [x] 3.7 Implement `file_panel.setup_keymaps(buf)` for `j`/`k` navigation and `<Enter>` to select file
+  - [x] 3.8 Implement `file_panel.get_file_at_cursor()` helper to extract file path from current cursor line
+  - [x] 3.9 Implement `file_panel.on_file_selected(file_path)` callback that updates selected file state and triggers diff panel update
 
 - [ ] 4.0 Implement Side-by-Side Diff Rendering
   - [ ] 4.1 Create `lua/mrreviewer/ui/diffview/diff_panel.lua` module
