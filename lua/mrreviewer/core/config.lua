@@ -77,6 +77,17 @@ local defaults = {
     -- Number of old log files to keep
     max_backups = 3,
   },
+
+  -- Diffview (three-pane layout) settings
+  diffview = {
+    -- Duration in milliseconds for comment line highlighting
+    -- Set to nil or 0 for permanent highlighting until navigation
+    highlight_duration = 2000,
+    -- Which pane should have focus when diffview opens: 'files', 'diff', or 'comments'
+    default_focus = 'files',
+    -- Show resolved comments by default in the comments panel
+    show_resolved = true,
+  },
 }
 
 -- Current active configuration

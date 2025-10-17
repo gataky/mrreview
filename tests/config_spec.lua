@@ -231,4 +231,77 @@ describe('config', function()
       assert.equals('info', config.get_value('notifications.level'))
     end)
   end)
+
+  describe('diffview configuration', function()
+    it('has correct default diffview settings', function()
+      config.setup()
+
+      assert.equals(2000, config.get_value('diffview.highlight_duration'))
+      assert.equals('files', config.get_value('diffview.default_focus'))
+      assert.is_true(config.get_value('diffview.show_resolved'))
+    end)
+
+    it('allows overriding diffview.highlight_duration', function()
+      config.setup({
+        diffview = {
+          highlight_duration = 5000,
+        },
+      })
+
+      assert.equals(5000, config.get_value('diffview.highlight_duration'))
+      -- Other defaults should be preserved
+      assert.equals('files', config.get_value('diffview.default_focus'))
+      assert.is_true(config.get_value('diffview.show_resolved'))
+    end)
+
+    it('allows overriding diffview.default_focus', function()
+      config.setup({
+        diffview = {
+          default_focus = 'diff',
+        },
+      })
+
+      assert.equals('diff', config.get_value('diffview.default_focus'))
+      -- Other defaults should be preserved
+      assert.equals(2000, config.get_value('diffview.highlight_duration'))
+      assert.is_true(config.get_value('diffview.show_resolved'))
+    end)
+
+    it('allows overriding diffview.show_resolved', function()
+      config.setup({
+        diffview = {
+          show_resolved = false,
+        },
+      })
+
+      assert.is_false(config.get_value('diffview.show_resolved'))
+      -- Other defaults should be preserved
+      assert.equals(2000, config.get_value('diffview.highlight_duration'))
+      assert.equals('files', config.get_value('diffview.default_focus'))
+    end)
+
+    it('allows setting highlight_duration to 0 for permanent highlighting', function()
+      config.setup({
+        diffview = {
+          highlight_duration = 0,
+        },
+      })
+
+      assert.equals(0, config.get_value('diffview.highlight_duration'))
+    end)
+
+    it('performs deep merge for diffview options', function()
+      config.setup({
+        diffview = {
+          highlight_duration = 3000,
+          -- default_focus and show_resolved should remain as defaults
+        },
+      })
+
+      local opts = config.get()
+      assert.equals(3000, opts.diffview.highlight_duration)
+      assert.equals('files', opts.diffview.default_focus)
+      assert.is_true(opts.diffview.show_resolved)
+    end)
+  end)
 end)

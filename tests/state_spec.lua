@@ -19,6 +19,7 @@ describe('state', function()
       assert.is_table(s.session)
       assert.is_table(s.diff)
       assert.is_table(s.comments)
+      assert.is_table(s.diffview)
     end)
 
     it('should get session state', function()
@@ -45,6 +46,144 @@ describe('state', function()
       assert.is_table(comments)
       assert.is_table(comments.displayed_comments)
       assert.is_number(comments.namespace_id)
+    end)
+
+    it('should get diffview state', function()
+      local diffview = state.get_diffview()
+
+      assert.is_table(diffview)
+      assert.is_table(diffview.panel_buffers)
+      assert.is_table(diffview.panel_windows)
+      assert.is_nil(diffview.selected_file)
+      assert.is_nil(diffview.selected_comment)
+      assert.is_nil(diffview.highlight_timer)
+      assert.is_boolean(diffview.filter_resolved)
+      assert.is_false(diffview.filter_resolved)
+    end)
+  end)
+
+  describe('diffview state management', function()
+    it('should set and get diffview values with dot notation', function()
+      assert.is_table(state.get_value('diffview.panel_buffers'))
+      assert.is_table(state.get_value('diffview.panel_windows'))
+      assert.is_nil(state.get_value('diffview.selected_file'))
+      assert.is_false(state.get_value('diffview.filter_resolved'))
+    end)
+
+    it('should set diffview selected_file', function()
+      local ok, err = state.set_value('diffview.selected_file', 'test.lua')
+
+      assert.is_true(ok)
+      assert.is_nil(err)
+      assert.equals('test.lua', state.get_value('diffview.selected_file'))
+    end)
+
+    it('should set diffview selected_comment', function()
+      local comment = { id = 123, body = 'test comment' }
+      local ok, err = state.set_value('diffview.selected_comment', comment)
+
+      assert.is_true(ok)
+      assert.is_nil(err)
+      assert.equals(comment, state.get_value('diffview.selected_comment'))
+    end)
+
+    it('should set diffview filter_resolved', function()
+      local ok, err = state.set_value('diffview.filter_resolved', true)
+
+      assert.is_true(ok)
+      assert.is_nil(err)
+      assert.is_true(state.get_value('diffview.filter_resolved'))
+    end)
+
+    it('should clear diffview state', function()
+      -- Set some values
+      local diffview = state.get_diffview()
+      diffview.panel_buffers = { files = 1, diff = 2 }
+      diffview.panel_windows = { files = 10, diff = 11 }
+      diffview.selected_file = 'test.lua'
+      diffview.selected_comment = { id = 123 }
+      diffview.filter_resolved = true
+
+      -- Clear
+      state.clear_diffview()
+
+      -- Verify cleared
+      local cleared = state.get_diffview()
+      assert.equals(0, vim.tbl_count(cleared.panel_buffers))
+      assert.equals(0, vim.tbl_count(cleared.panel_windows))
+      assert.is_nil(cleared.selected_file)
+      assert.is_nil(cleared.selected_comment)
+      assert.is_nil(cleared.highlight_timer)
+      assert.is_false(cleared.filter_resolved)
+    end)
+
+    it('should cancel highlight timer when clearing diffview', function()
+      -- Set a fake timer
+      local diffview = state.get_diffview()
+      -- Create a real timer that we can test cancellation
+      local timer_called = false
+      local timer = vim.fn.timer_start(10000, function()
+        timer_called = true
+      end)
+      diffview.highlight_timer = timer
+
+      -- Clear should cancel the timer
+      state.clear_diffview()
+
+      -- Timer should be stopped
+      assert.is_nil(state.get_diffview().highlight_timer)
+    end)
+
+    it('should validate diffview state structure', function()
+      local valid, err = state.validate()
+
+      assert.is_true(valid)
+      assert.is_nil(err)
+    end)
+
+    it('should reject invalid diffview.panel_buffers type', function()
+      local bad_state = vim.deepcopy(state.get())
+      bad_state.diffview.panel_buffers = 'not a table'
+
+      local valid, err = state.validate(bad_state)
+
+      assert.is_false(valid)
+      assert.is_not_nil(err)
+      assert.matches('panel_buffers must be a table', err.message)
+    end)
+
+    it('should reject invalid diffview.selected_file type', function()
+      local bad_state = vim.deepcopy(state.get())
+      bad_state.diffview.selected_file = 123
+
+      local valid, err = state.validate(bad_state)
+
+      assert.is_false(valid)
+      assert.is_not_nil(err)
+      assert.matches('selected_file must be a string or nil', err.message)
+    end)
+
+    it('should reject invalid diffview.filter_resolved type', function()
+      local bad_state = vim.deepcopy(state.get())
+      bad_state.diffview.filter_resolved = 'not a boolean'
+
+      local valid, err = state.validate(bad_state)
+
+      assert.is_false(valid)
+      assert.is_not_nil(err)
+      assert.matches('filter_resolved must be a boolean', err.message)
+    end)
+
+    it('should accept nil for optional diffview fields', function()
+      local good_state = vim.deepcopy(state.get())
+      good_state.diffview.selected_file = nil
+      good_state.diffview.selected_comment = nil
+      good_state.diffview.highlight_timer = nil
+
+      local valid, err = state.validate(good_state)
+
+      assert.is_true(valid)
+      assert.is_nil(err)
     end)
   end)
 
@@ -238,6 +377,7 @@ describe('state', function()
       local bad_state = {
         diff = {},
         comments = {},
+        diffview = {},
       }
       local valid, err = state.validate(bad_state)
 
@@ -250,6 +390,7 @@ describe('state', function()
       local bad_state = {
         session = { initialized = false, current_mr = nil, current_diff_buffers = {} },
         comments = {},
+        diffview = {},
       }
       local valid, err = state.validate(bad_state)
 
@@ -262,12 +403,33 @@ describe('state', function()
       local bad_state = {
         session = { initialized = false, current_mr = nil, current_diff_buffers = {} },
         diff = { buffers = {}, windows = {}, current_file_index = 1, files = {} },
+        diffview = {},
       }
       local valid, err = state.validate(bad_state)
 
       assert.is_false(valid)
       assert.is_not_nil(err)
       assert.matches('comments must be a table', err.message)
+    end)
+
+    it('should reject missing diffview', function()
+      local bad_state = {
+        session = { initialized = false, current_mr = nil, current_diff_buffers = {} },
+        diff = { buffers = {}, windows = {}, current_file_index = 1, files = {} },
+        comments = {
+          displayed_comments = {},
+          comment_buffer = nil,
+          comment_window = nil,
+          comment_float_win = nil,
+          comment_float_buf = nil,
+          namespace_id = 1,
+        },
+      }
+      local valid, err = state.validate(bad_state)
+
+      assert.is_false(valid)
+      assert.is_not_nil(err)
+      assert.matches('diffview must be a table', err.message)
     end)
 
     it('should reject invalid initialized type', function()

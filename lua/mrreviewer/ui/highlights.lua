@@ -19,6 +19,12 @@ local highlights = {
   MRReviewerCommentTimestamp = { link = 'NonText' },
   MRReviewerCommentBody = { link = 'Normal' },
 
+  -- Diffview-specific highlights
+  MRReviewerCommentCount = { fg = '#7aa2f7', italic = true },
+  MRReviewerCommentHighlight = { bg = '#3d59a1', bold = true },
+  MRReviewerSelectedComment = { link = 'CursorLine' },
+  MRReviewerCommentFileHeader = { fg = '#bb9af7', bold = true },
+
   -- Sign column indicators
   MRReviewerSignComment = { fg = '#7aa2f7', bold = true },
   MRReviewerSignCommentResolved = { fg = '#565f89' },
@@ -63,6 +69,10 @@ function M.get_group(element)
     comment_author = 'MRReviewerCommentAuthor',
     comment_timestamp = 'MRReviewerCommentTimestamp',
     comment_body = 'MRReviewerCommentBody',
+    comment_count = 'MRReviewerCommentCount',
+    comment_highlight = 'MRReviewerCommentHighlight',
+    selected_comment = 'MRReviewerSelectedComment',
+    comment_file_header = 'MRReviewerCommentFileHeader',
     sign_comment = 'MRReviewerSignComment',
     sign_comment_resolved = 'MRReviewerSignCommentResolved',
     virtual_text = 'MRReviewerVirtualText',

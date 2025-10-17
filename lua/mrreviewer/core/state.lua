@@ -31,6 +31,16 @@ M._state = {
     comment_float_buf = nil,
     namespace_id = vim.api.nvim_create_namespace('mrreviewer_comments'),
   },
+
+  -- Diffview state (three-pane layout)
+  diffview = {
+    panel_buffers = {},
+    panel_windows = {},
+    selected_file = nil,
+    selected_comment = nil,
+    highlight_timer = nil,
+    filter_resolved = false,
+  },
 }
 
 --- Get the entire state object
@@ -55,6 +65,12 @@ end
 --- @return table Comments state
 function M.get_comments()
   return M._state.comments
+end
+
+--- Get diffview state
+--- @return table Diffview state
+function M.get_diffview()
+  return M._state.diffview
 end
 
 --- Get a specific state value using dot notation
@@ -171,11 +187,27 @@ function M.clear_comments()
   M._state.comments.comment_float_buf = nil
 end
 
+--- Clear all diffview state
+function M.clear_diffview()
+  -- Cancel highlight timer if exists
+  if M._state.diffview.highlight_timer then
+    vim.fn.timer_stop(M._state.diffview.highlight_timer)
+  end
+
+  M._state.diffview.panel_buffers = {}
+  M._state.diffview.panel_windows = {}
+  M._state.diffview.selected_file = nil
+  M._state.diffview.selected_comment = nil
+  M._state.diffview.highlight_timer = nil
+  M._state.diffview.filter_resolved = false
+end
+
 --- Clear all state
 function M.clear_all()
   M.clear_session()
   M.clear_diff()
   M.clear_comments()
+  M.clear_diffview()
 end
 
 --- Validate state structure
@@ -272,6 +304,48 @@ function M.validate(state)
     return false, errors.validation_error('state.comments.namespace_id must be a number')
   end
 
+  -- Validate diffview fields
+  if type(state.diffview) ~= 'table' then
+    return false, errors.validation_error('state.diffview must be a table')
+  end
+
+  if type(state.diffview.panel_buffers) ~= 'table' then
+    return false, errors.validation_error('state.diffview.panel_buffers must be a table')
+  end
+
+  if type(state.diffview.panel_windows) ~= 'table' then
+    return false, errors.validation_error('state.diffview.panel_windows must be a table')
+  end
+
+  if
+    state.diffview.selected_file ~= nil
+    and type(state.diffview.selected_file) ~= 'string'
+  then
+    return false,
+      errors.validation_error('state.diffview.selected_file must be a string or nil')
+  end
+
+  if
+    state.diffview.selected_comment ~= nil
+    and type(state.diffview.selected_comment) ~= 'table'
+  then
+    return false,
+      errors.validation_error('state.diffview.selected_comment must be a table or nil')
+  end
+
+  if
+    state.diffview.highlight_timer ~= nil
+    and type(state.diffview.highlight_timer) ~= 'number'
+  then
+    return false,
+      errors.validation_error('state.diffview.highlight_timer must be a number or nil')
+  end
+
+  if type(state.diffview.filter_resolved) ~= 'boolean' then
+    return false,
+      errors.validation_error('state.diffview.filter_resolved must be a boolean')
+  end
+
   return true, nil
 end
 
@@ -296,6 +370,14 @@ function M.reset()
       comment_float_win = nil,
       comment_float_buf = nil,
       namespace_id = vim.api.nvim_create_namespace('mrreviewer_comments'),
+    },
+    diffview = {
+      panel_buffers = {},
+      panel_windows = {},
+      selected_file = nil,
+      selected_comment = nil,
+      highlight_timer = nil,
+      filter_resolved = false,
     },
   }
 end
