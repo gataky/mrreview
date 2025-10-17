@@ -1,18 +1,10 @@
--- lua/mrreviewer/diff.lua
--- Diff view creation, layout, and buffer management
+-- lua/mrreviewer/diff/view.lua
+-- Diff view creation and file loading
 
 local M = {}
 local utils = require('mrreviewer.utils')
 local Job = require('plenary.job')
 local comments = require('mrreviewer.comments')
-
--- Store current diff view state
-M.state = {
-  buffers = {},
-  windows = {},
-  current_file_index = 1,
-  files = {},
-}
 
 --- Get changed files from MR data using git diff
 --- @param mr_data table MR details with diff_refs
@@ -136,8 +128,9 @@ end
 --- @param old_lines table Lines from target branch
 --- @param new_lines table Lines from source branch
 --- @param file_info table File information
+--- @param state table Diff state
 --- @return number Buffer number
-function M.create_unified_view(old_lines, new_lines, file_info)
+function M.create_unified_view(old_lines, new_lines, file_info, state)
   -- Ensure signs are defined
   local highlights = require('mrreviewer.highlights')
   highlights.define_signs()
@@ -231,89 +224,18 @@ function M.create_unified_view(old_lines, new_lines, file_info)
   end
 
   -- Store state (single buffer now)
-  M.state.buffers = { new = buf }
-  M.state.windows = { new = win }
+  state.buffers = { new = buf }
+  state.windows = { new = win }
 
   return buf
-end
-
---- Set up keymaps for diff navigation
-local function setup_keymaps()
-  local config = require('mrreviewer.config')
-  local keymaps = config.get_value('keymaps')
-
-  if not keymaps then
-    return
-  end
-
-  -- Set keymaps for both buffers
-  for _, buf in pairs(M.state.buffers) do
-    if vim.api.nvim_buf_is_valid(buf) then
-      vim.api.nvim_buf_set_keymap(buf, 'n', keymaps.next_file or ']f', '', {
-        callback = M.next_file,
-        noremap = true,
-        silent = true,
-        desc = 'Next file in MR',
-      })
-
-      vim.api.nvim_buf_set_keymap(buf, 'n', keymaps.prev_file or '[f', '', {
-        callback = M.prev_file,
-        noremap = true,
-        silent = true,
-        desc = 'Previous file in MR',
-      })
-
-      vim.api.nvim_buf_set_keymap(buf, 'n', keymaps.close or 'q', '', {
-        callback = M.close,
-        noremap = true,
-        silent = true,
-        desc = 'Close diff view',
-      })
-
-      vim.api.nvim_buf_set_keymap(buf, 'n', keymaps.next_comment or ']c', '', {
-        callback = comments.next_comment,
-        noremap = true,
-        silent = true,
-        desc = 'Next comment',
-      })
-
-      vim.api.nvim_buf_set_keymap(buf, 'n', keymaps.prev_comment or '[c', '', {
-        callback = comments.prev_comment,
-        noremap = true,
-        silent = true,
-        desc = 'Previous comment',
-      })
-
-      vim.api.nvim_buf_set_keymap(buf, 'n', keymaps.toggle_comments or '<leader>tc', '', {
-        callback = comments.toggle_mode,
-        noremap = true,
-        silent = true,
-        desc = 'Toggle comment display mode',
-      })
-
-      vim.api.nvim_buf_set_keymap(buf, 'n', keymaps.show_comment or 'K', '', {
-        callback = comments.show_float_for_current_line,
-        noremap = true,
-        silent = true,
-        desc = 'Show comment for current line',
-      })
-
-      vim.api.nvim_buf_set_keymap(buf, 'n', keymaps.list_comments or '<leader>cl', '', {
-        callback = function()
-          require('mrreviewer.commands').list_comments()
-        end,
-        noremap = true,
-        silent = true,
-        desc = 'List all comments in MR',
-      })
-    end
-  end
 end
 
 --- Open diff view for a specific file in the MR
 --- @param mr_data table MR details with diff_refs
 --- @param file_info table File information
-function M.open_file_diff(mr_data, file_info)
+--- @param state table Diff state
+--- @param setup_keymaps_fn function Function to set up keymaps
+function M.open_file_diff(mr_data, file_info, state, setup_keymaps_fn)
   if not mr_data or not file_info then
     utils.notify('Missing MR data or file info', 'error')
     return
@@ -339,101 +261,22 @@ function M.open_file_diff(mr_data, file_info)
   end
 
   -- Create unified diff view
-  local buf = M.create_unified_view(old_lines, new_lines, file_info)
+  local buf = M.create_unified_view(old_lines, new_lines, file_info, state)
 
   -- Display comments for the buffer
   comments.display_for_file(file_info.new_path or file_info.path, buf)
 
   -- Set up keymaps for the new buffer
-  setup_keymaps()
+  setup_keymaps_fn()
 
   utils.notify('Loaded diff for ' .. file_info.path, 'info')
-end
-
---- Close the current diff view
-function M.close()
-  -- Clear comments
-  comments.clear()
-
-  -- Close windows safely (only if not the last window)
-  local total_windows = #vim.api.nvim_list_wins()
-  local windows_to_close = vim.tbl_count(M.state.windows)
-
-  -- Only close windows if there will be at least one window remaining
-  if total_windows > windows_to_close then
-    for _, win in pairs(M.state.windows) do
-      if vim.api.nvim_win_is_valid(win) then
-        pcall(vim.api.nvim_win_close, win, true)
-      end
-    end
-  else
-    -- If these are the last windows, just wipe the buffers instead
-    for _, buf in pairs(M.state.buffers) do
-      if vim.api.nvim_buf_is_valid(buf) then
-        pcall(vim.api.nvim_buf_delete, buf, { force = true })
-      end
-    end
-  end
-
-  -- Clear state
-  M.state.buffers = {}
-  M.state.windows = {}
-  M.state.current_file_index = 1
-  M.state.files = {}
-end
-
---- Navigate to next file in MR
-function M.next_file()
-  if #M.state.files == 0 then
-    utils.notify('No files to navigate', 'warn')
-    return
-  end
-
-  M.state.current_file_index = M.state.current_file_index + 1
-  if M.state.current_file_index > #M.state.files then
-    M.state.current_file_index = 1
-  end
-
-  local mrreviewer = require('mrreviewer')
-  local mr_data = mrreviewer.state.current_mr and mrreviewer.state.current_mr.data
-
-  if mr_data then
-    -- Clear comments but keep windows open
-    comments.clear()
-
-    -- Load the new file diff in existing windows
-    M.load_file_in_existing_windows(mr_data, M.state.files[M.state.current_file_index])
-  end
-end
-
---- Navigate to previous file in MR
-function M.prev_file()
-  if #M.state.files == 0 then
-    utils.notify('No files to navigate', 'warn')
-    return
-  end
-
-  M.state.current_file_index = M.state.current_file_index - 1
-  if M.state.current_file_index < 1 then
-    M.state.current_file_index = #M.state.files
-  end
-
-  local mrreviewer = require('mrreviewer')
-  local mr_data = mrreviewer.state.current_mr and mrreviewer.state.current_mr.data
-
-  if mr_data then
-    -- Clear comments but keep windows open
-    comments.clear()
-
-    -- Load the new file diff in existing windows
-    M.load_file_in_existing_windows(mr_data, M.state.files[M.state.current_file_index])
-  end
 end
 
 --- Load a new file in existing window
 --- @param mr_data table MR details
 --- @param file_info table File information
-function M.load_file_in_existing_windows(mr_data, file_info)
+--- @param state table Diff state
+function M.load_file_in_existing_windows(mr_data, file_info, state)
   if not mr_data or not file_info then
     utils.notify('Missing MR data or file info', 'error')
     return
@@ -459,7 +302,7 @@ function M.load_file_in_existing_windows(mr_data, file_info)
   end
 
   -- Get existing buffer
-  local buf = M.state.buffers.new
+  local buf = state.buffers.new
 
   if buf and vim.api.nvim_buf_is_valid(buf) then
     -- Clear all extmarks from previous file
@@ -539,31 +382,6 @@ function M.load_file_in_existing_windows(mr_data, file_info)
   comments.display_for_file(file_info.new_path or file_info.path, buf)
 
   utils.notify('Loaded diff for ' .. file_info.path, 'info')
-end
-
---- Open diff view for an MR
---- @param mr_data table MR details
-function M.open(mr_data)
-  if not mr_data then
-    utils.notify('No MR data provided', 'error')
-    return
-  end
-
-  -- Get changed files
-  local files = M.get_changed_files(mr_data)
-  if #files == 0 then
-    utils.notify('No changed files in MR', 'warn')
-    return
-  end
-
-  M.state.files = files
-  M.state.current_file_index = 1
-
-  -- Open first file
-  M.open_file_diff(mr_data, files[1])
-
-  -- Set up keymaps
-  setup_keymaps()
 end
 
 return M

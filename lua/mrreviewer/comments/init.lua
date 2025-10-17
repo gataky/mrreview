@@ -1,4 +1,4 @@
--- lua/mrreviewer/comments.lua
+-- lua/mrreviewer/comments/init.lua
 -- Comment fetching, parsing, and display logic
 
 local M = {}
@@ -6,6 +6,7 @@ local utils = require('mrreviewer.utils')
 local parsers = require('mrreviewer.parsers')
 local highlights = require('mrreviewer.highlights')
 local position = require('mrreviewer.position')
+local formatting = require('mrreviewer.comments.formatting')
 
 -- State for comment display
 M.state = {
@@ -31,46 +32,6 @@ end
 --- @return number|nil Line number in buffer (1-indexed) or nil
 function M.map_to_line(comment, buffer)
   return position.map_comment_to_line(comment, buffer)
-end
-
---- Format comment for display
---- @param comment table Comment data
---- @return table Lines for display
-local function format_comment(comment)
-  local lines = {}
-  local resolved_marker = comment.resolved and '✓' or '•'
-  local resolved_text = comment.resolved and '(resolved)' or '(unresolved)'
-
-  -- Header line
-  table.insert(lines, string.format(
-    '%s %s %s',
-    resolved_marker,
-    comment.author.name or comment.author.username,
-    resolved_text
-  ))
-
-  -- Timestamp
-  if comment.created_at then
-    local date = comment.created_at:match('(%d%d%d%d%-%d%d%-%d%d)')
-    if date then
-      table.insert(lines, string.format('  %s', date))
-    end
-  end
-
-  -- Empty line for spacing
-  table.insert(lines, '')
-
-  -- Comment body (indented)
-  for line in comment.body:gmatch('[^\r\n]+') do
-    table.insert(lines, '  ' .. line)
-  end
-
-  -- Separator
-  table.insert(lines, '')
-  table.insert(lines, string.rep('─', 40))
-  table.insert(lines, '')
-
-  return lines
 end
 
 --- Display comments in a split buffer
@@ -105,7 +66,7 @@ function M.display_split(comments, buffer)
     if line_num then
       table.insert(all_lines, string.format('Line %d:', line_num))
       table.insert(all_lines, '')
-      local comment_lines = format_comment(comment)
+      local comment_lines = formatting.format_comment(comment)
       for _, line in ipairs(comment_lines) do
         table.insert(all_lines, line)
       end
