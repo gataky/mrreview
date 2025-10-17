@@ -109,9 +109,9 @@ function M.display_split(comments, buffer)
 
   -- Create comment buffer
   local comment_buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_option(comment_buf, 'buftype', 'nofile')
-  vim.api.nvim_buf_set_option(comment_buf, 'bufhidden', 'wipe')
-  vim.api.nvim_buf_set_option(comment_buf, 'swapfile', false)
+  vim.bo[comment_buf].buftype = 'nofile'
+  vim.bo[comment_buf].bufhidden = 'wipe'
+  vim.bo[comment_buf].swapfile = false
   vim.api.nvim_buf_set_name(comment_buf, 'MRReviewer://comments')
 
   -- Format all comments
@@ -130,8 +130,8 @@ function M.display_split(comments, buffer)
 
   -- Set buffer content
   vim.api.nvim_buf_set_lines(comment_buf, 0, -1, false, all_lines)
-  vim.api.nvim_buf_set_option(comment_buf, 'modifiable', false)
-  vim.api.nvim_buf_set_option(comment_buf, 'filetype', 'markdown')
+  vim.bo[comment_buf].modifiable = false
+  vim.bo[comment_buf].filetype = 'markdown'
 
   -- Create vertical split on the right
   local width = config.get_value('window.comment_width') or 40
@@ -140,10 +140,10 @@ function M.display_split(comments, buffer)
   vim.api.nvim_win_set_buf(comment_win, comment_buf)
 
   -- Set window options
-  vim.api.nvim_win_set_option(comment_win, 'wrap', true)
-  vim.api.nvim_win_set_option(comment_win, 'linebreak', true)
-  vim.api.nvim_win_set_option(comment_win, 'number', false)
-  vim.api.nvim_win_set_option(comment_win, 'relativenumber', false)
+  vim.wo[comment_win].wrap = true
+  vim.wo[comment_win].linebreak = true
+  vim.wo[comment_win].number = false
+  vim.wo[comment_win].relativenumber = false
 
   -- Store state
   M.state.comment_buffer = comment_buf
@@ -286,8 +286,8 @@ function M.show_float_for_current_line()
   -- Create buffer for float
   local float_buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_lines(float_buf, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(float_buf, 'modifiable', false)
-  vim.api.nvim_buf_set_option(float_buf, 'filetype', 'markdown')
+  vim.bo[float_buf].modifiable = false
+  vim.bo[float_buf].filetype = 'markdown'
 
   -- Open floating window (don't focus it initially)
   local float_win = vim.api.nvim_open_win(float_buf, false, opts)
@@ -297,8 +297,8 @@ function M.show_float_for_current_line()
   M.state.comment_float_buf = float_buf
 
   -- Set window options
-  vim.api.nvim_win_set_option(float_win, 'wrap', true)
-  vim.api.nvim_win_set_option(float_win, 'linebreak', true)
+  vim.wo[float_win].wrap = true
+  vim.wo[float_win].linebreak = true
 
   -- Close float function
   local close_float = function()

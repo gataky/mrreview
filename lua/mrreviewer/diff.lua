@@ -158,18 +158,18 @@ function M.create_unified_view(old_lines, new_lines, file_info)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, new_lines)
 
   -- Set buffer options
-  vim.api.nvim_buf_set_option(buf, 'buftype', 'nofile')
-  vim.api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
-  vim.api.nvim_buf_set_option(buf, 'swapfile', false)
-  vim.api.nvim_buf_set_option(buf, 'modifiable', false)
-  vim.api.nvim_buf_set_option(buf, 'readonly', true)
+  vim.bo[buf].buftype = 'nofile'
+  vim.bo[buf].bufhidden = 'wipe'
+  vim.bo[buf].swapfile = false
+  vim.bo[buf].modifiable = false
+  vim.bo[buf].readonly = true
 
   -- Set filetype for syntax highlighting
   local file_path = file_info.new_path or file_info.path
   if file_path then
     local ft = vim.filetype.match({ filename = file_path })
     if ft then
-      vim.api.nvim_buf_set_option(buf, 'filetype', ft)
+      vim.bo[buf].filetype = ft
     end
   end
 
@@ -468,8 +468,8 @@ function M.load_file_in_existing_windows(mr_data, file_info)
     vim.fn.sign_unplace('MRReviewerDiff', { buffer = buf })
 
     -- Make buffer modifiable temporarily and do all modifications
-    vim.api.nvim_buf_set_option(buf, 'modifiable', true)
-    vim.api.nvim_buf_set_option(buf, 'readonly', false)
+    vim.bo[buf].modifiable = true
+    vim.bo[buf].readonly = false
 
     -- Update buffer content
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, new_lines)
@@ -480,12 +480,12 @@ function M.load_file_in_existing_windows(mr_data, file_info)
     -- Update filetype
     local ft = vim.filetype.match({ filename = file_info.new_path or file_info.path })
     if ft then
-      vim.api.nvim_buf_set_option(buf, 'filetype', ft)
+      vim.bo[buf].filetype = ft
     end
 
     -- Set back to readonly
-    vim.api.nvim_buf_set_option(buf, 'modifiable', false)
-    vim.api.nvim_buf_set_option(buf, 'readonly', true)
+    vim.bo[buf].modifiable = false
+    vim.bo[buf].readonly = true
 
     -- Re-apply diff highlights
     local diff_result = vim.diff(table.concat(old_lines, '\n'), table.concat(new_lines, '\n'), {
