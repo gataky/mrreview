@@ -36,10 +36,10 @@ Generated from: `0002-prd-diffview-style-interface.md`
 - `lua/mrreviewer/ui/diffview/layout.lua` - Three-pane window layout management with create_layout(), create_three_pane_windows(), focus_pane(), and close() functions ✓ Created
 - `lua/mrreviewer/ui/diffview/file_panel.lua` - File tree panel with render(), calculate_comment_counts(), natural sorting, highlighting, and keymap setup ✓ Created
 - `lua/mrreviewer/ui/diffview/diff_panel.lua` - Side-by-side diff rendering with render(), update_file(), highlight_comment_line(), scrollbind/cursorbind support ✓ Created
+- `lua/mrreviewer/ui/diffview/comments_panel.lua` - Comments list with filtering, minimal formatting, group_by_file(), filter_by_status(), toggle_resolved_filter(), and keymap setup ✓ Created
 
 ### New Files to Create
 - `lua/mrreviewer/ui/diffview/init.lua` - Main diffview API and entry point
-- `lua/mrreviewer/ui/diffview/comments_panel.lua` - Comments list with filtering and minimal formatting
 - `lua/mrreviewer/ui/diffview/navigation.lua` - Bidirectional navigation and comment highlighting
 - `tests/diffview_spec.lua` - Unit tests for diffview module
 - `tests/diffview_layout_spec.lua` - Unit tests for layout module
@@ -53,13 +53,13 @@ Generated from: `0002-prd-diffview-style-interface.md`
 
 - `lua/mrreviewer/core/state.lua` - Added `diffview` state section with panel_buffers, panel_windows, selected_file, selected_comment, highlight_timer, filter_resolved; added get_diffview(), clear_diffview(), updated validation and reset() ✓ Modified
 - `lua/mrreviewer/core/config.lua` - Added `diffview` configuration options (highlight_duration, default_focus, show_resolved) ✓ Modified
-- `lua/mrreviewer/ui/highlights.lua` - Added diffview-specific highlight groups (MRReviewerCommentCount, MRReviewerCommentHighlight, MRReviewerSelectedComment, MRReviewerCommentFileHeader) ✓ Modified
+- `lua/mrreviewer/ui/highlights.lua` - Added diffview-specific highlight groups (MRReviewerCommentCount, MRReviewerCommentHighlight, MRReviewerSelectedComment, MRReviewerCommentFileHeader, MRReviewerResolvedComment, MRReviewerUnresolvedComment) ✓ Modified
+- `lua/mrreviewer/ui/comments/formatting.lua` - Added `format_minimal()` function for single-line comment display in comments panel ✓ Modified
 - `tests/state_spec.lua` - Added 11 comprehensive tests for diffview state management (getter, setters, validation, clear, timer cancellation) ✓ Modified
 - `tests/config_spec.lua` - Added 6 comprehensive tests for diffview configuration (defaults, overrides, deep merge) ✓ Modified
 
 ### Files to Modify
 - `lua/mrreviewer/api/commands.lua` - Update `review()` function to call `diffview.open()` instead of `diff.open()`
-- `lua/mrreviewer/ui/comments/formatting.lua` - Add `format_minimal()` function for comments panel display
 
 ### Notes
 
@@ -113,17 +113,17 @@ Generated from: `0002-prd-diffview-style-interface.md`
   - [x] 4.8 Implement `diff_panel.update_file(mr_data, file_path)` to reload diff when file selection changes
   - [x] 4.9 Handle error cases: missing files, fetch failures (use `utils.notify()` and `logger.log_error()`)
 
-- [ ] 5.0 Create Comments Panel with Filtering
-  - [ ] 5.1 Create `lua/mrreviewer/ui/diffview/comments_panel.lua` module
-  - [ ] 5.2 Implement `comments_panel.render(comments, show_resolved)` function that populates comments buffer
-  - [ ] 5.3 Group comments by file matching file tree order using `comments_panel.group_by_file(comments, files)`
-  - [ ] 5.4 Add `format_minimal(comment)` function to `ui/comments/formatting.lua` returning: `"Line <line>  @<author>  <first_line_of_body>  [+N replies]"` format
-  - [ ] 5.5 Apply visual separators between file groups (empty line or `---` separator)
-  - [ ] 5.6 Apply highlighting: resolved comments use `MRReviewerResolvedComment`, unresolved use `MRReviewerUnresolvedComment`, file headers use `MRReviewerCommentFileHeader`
-  - [ ] 5.7 Implement `comments_panel.filter_by_status(show_resolved)` to toggle resolved/unresolved filter (update state and re-render)
-  - [ ] 5.8 Implement `comments_panel.setup_keymaps(buf)` for: `j`/`k` navigation, `<Enter>` jump to comment, `KK` open full thread, filter toggle keybind
-  - [ ] 5.9 Implement `comments_panel.get_comment_at_cursor()` helper to extract comment data from current cursor line
-  - [ ] 5.10 Handle empty state: leave buffer blank when no comments match filter
+- [x] 5.0 Create Comments Panel with Filtering
+  - [x] 5.1 Create `lua/mrreviewer/ui/diffview/comments_panel.lua` module
+  - [x] 5.2 Implement `comments_panel.render(comments, show_resolved)` function that populates comments buffer
+  - [x] 5.3 Group comments by file matching file tree order using `comments_panel.group_by_file(comments, files)`
+  - [x] 5.4 Add `format_minimal(comment)` function to `ui/comments/formatting.lua` returning: `"Line <line>  @<author>  <first_line_of_body>  [+N replies]"` format
+  - [x] 5.5 Apply visual separators between file groups (empty line or `---` separator)
+  - [x] 5.6 Apply highlighting: resolved comments use `MRReviewerResolvedComment`, unresolved use `MRReviewerUnresolvedComment`, file headers use `MRReviewerCommentFileHeader`
+  - [x] 5.7 Implement `comments_panel.filter_by_status(show_resolved)` to toggle resolved/unresolved filter (update state and re-render)
+  - [x] 5.8 Implement `comments_panel.setup_keymaps(buf)` for: `j`/`k` navigation, `<Enter>` jump to comment, `KK` open full thread, filter toggle keybind
+  - [x] 5.9 Implement `comments_panel.get_comment_at_cursor()` helper to extract comment data from current cursor line
+  - [x] 5.10 Handle empty state: leave buffer blank when no comments match filter
 
 - [ ] 6.0 Implement Bidirectional Navigation and Highlighting
   - [ ] 6.1 Create `lua/mrreviewer/ui/diffview/navigation.lua` module

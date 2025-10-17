@@ -24,6 +24,8 @@ local highlights = {
   MRReviewerCommentHighlight = { bg = '#3d59a1', bold = true },
   MRReviewerSelectedComment = { link = 'CursorLine' },
   MRReviewerCommentFileHeader = { fg = '#bb9af7', bold = true },
+  MRReviewerResolvedComment = { fg = '#565f89', italic = true },
+  MRReviewerUnresolvedComment = { fg = '#ff9e64' },
 
   -- Sign column indicators
   MRReviewerSignComment = { fg = '#7aa2f7', bold = true },
