@@ -141,33 +141,15 @@ end
 --- Get current git branch
 --- @return string|nil Branch name or nil if not in a git repo
 function M.get_current_branch()
-  local handle = io.popen('git rev-parse --abbrev-ref HEAD 2>/dev/null')
-  if not handle then
-    return nil
-  end
-
-  local branch = handle:read('*a')
-  handle:close()
-
-  if not branch or branch == '' then
-    return nil
-  end
-
-  return M.trim(branch)
+  local git = require('mrreviewer.git')
+  return git.get_current_branch()
 end
 
 --- Check if currently in a git repository
 --- @return boolean
 function M.is_git_repo()
-  local handle = io.popen('git rev-parse --is-inside-work-tree 2>/dev/null')
-  if not handle then
-    return false
-  end
-
-  local result = handle:read('*a')
-  handle:close()
-
-  return M.trim(result) == 'true'
+  local git = require('mrreviewer.git')
+  return git.is_git_repo()
 end
 
 --- Escape special characters for use in Lua patterns

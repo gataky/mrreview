@@ -96,18 +96,11 @@ end
 --- @return boolean, string Returns true if ready, or false and error message
 function M.check_installation()
   local config = require('mrreviewer.config')
+  local git = require('mrreviewer.git')
   local glab_path = config.get_value('glab.path') or 'glab'
 
   -- Check if glab command exists
-  local handle = io.popen('command -v ' .. glab_path .. ' 2>/dev/null')
-  if not handle then
-    return false, 'Failed to check for glab installation'
-  end
-
-  local result = handle:read('*a')
-  handle:close()
-
-  if utils.is_empty(result) then
+  if not git.command_exists(glab_path) then
     return false, 'glab CLI is not installed. Please install it from https://gitlab.com/gitlab-org/cli'
   end
 

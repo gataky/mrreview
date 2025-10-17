@@ -27,15 +27,18 @@
 **Estimated effort:** 4-6 hours
 **Breaking changes:** None (internal refactor)
 
-- [ ] Create `lua/mrreviewer/git.lua` module with Job-based helpers
-  - [ ] `git.get_current_branch()`
-  - [ ] `git.get_repo_root()`
-  - [ ] `git.get_remote_url()`
-  - [ ] `git.is_git_repo()`
-- [ ] Refactor `utils.lua` to use new git module
-- [ ] Refactor `project.lua` to use new git module
-- [ ] Remove all `io.popen()` calls
-- [ ] Add proper error handling for failed git operations
+- [x] Create `lua/mrreviewer/git.lua` module with Job-based helpers
+  - [x] `git.get_current_branch()`
+  - [x] `git.get_repo_root()`
+  - [x] `git.get_remote_url()`
+  - [x] `git.is_git_repo()`
+  - [x] `git.get_upstream_branch()` (bonus)
+  - [x] `git.command_exists()` (for glab check)
+- [x] Refactor `utils.lua` to use new git module
+- [x] Refactor `project.lua` to use new git module
+- [x] Refactor `glab.lua` to use new git module (bonus)
+- [x] Remove all `io.popen()` calls - verified ✓ (7 calls removed)
+- [x] Add proper error handling for failed git operations
 
 ### 1.3 Add Test Coverage for Core Modules
 **Target:** 60% coverage minimum

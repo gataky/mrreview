@@ -8,21 +8,8 @@ local utils = require('mrreviewer.utils')
 --- @param remote_name string|nil Remote name (default: 'origin')
 --- @return string|nil Remote URL or nil if not found
 function M.get_remote_url(remote_name)
-  remote_name = remote_name or 'origin'
-
-  local handle = io.popen('git remote get-url ' .. remote_name .. ' 2>/dev/null')
-  if not handle then
-    return nil
-  end
-
-  local url = handle:read('*a')
-  handle:close()
-
-  if utils.is_empty(url) then
-    return nil
-  end
-
-  return utils.trim(url)
+  local git = require('mrreviewer.git')
+  return git.get_remote_url(remote_name)
 end
 
 --- Parse GitLab project information from remote URL
@@ -115,6 +102,8 @@ end
 --- Tries to detect from current buffer's file path first, then falls back to cwd
 --- @return string|nil Root directory path or nil
 function M.get_repo_root()
+  local git = require('mrreviewer.git')
+
   -- First try to get repo root from current buffer's file path
   local current_file = vim.api.nvim_buf_get_name(0)
 
@@ -124,31 +113,14 @@ function M.get_repo_root()
     local file_dir = vim.fn.fnamemodify(current_file, ':h')
 
     -- Check if this directory is in a git repo
-    local handle = io.popen('cd "' .. file_dir .. '" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null')
-    if handle then
-      local root = handle:read('*a')
-      handle:close()
-
-      if not utils.is_empty(root) then
-        return utils.trim(root)
-      end
+    local root = git.get_repo_root(file_dir)
+    if root then
+      return root
     end
   end
 
   -- Fall back to current working directory
-  local handle = io.popen('git rev-parse --show-toplevel 2>/dev/null')
-  if not handle then
-    return nil
-  end
-
-  local root = handle:read('*a')
-  handle:close()
-
-  if utils.is_empty(root) then
-    return nil
-  end
-
-  return utils.trim(root)
+  return git.get_repo_root()
 end
 
 --- Get current git branch name
@@ -161,20 +133,16 @@ end
 --- This attempts to detect the target branch from git tracking info
 --- @return string|nil Target branch name or nil (defaults to 'main')
 function M.get_target_branch()
+  local git = require('mrreviewer.git')
+
   -- Try to get upstream tracking branch
-  local handle = io.popen('git rev-parse --abbrev-ref @{upstream} 2>/dev/null')
-  if not handle then
-    return 'main'
-  end
+  local upstream = git.get_upstream_branch()
 
-  local upstream = handle:read('*a')
-  handle:close()
-
-  if not utils.is_empty(upstream) then
+  if upstream then
     -- Extract branch name from remote/branch format
     local branch = upstream:match('[^/]+/(.+)')
     if branch then
-      return utils.trim(branch)
+      return branch
     end
   end
 
