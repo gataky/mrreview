@@ -273,48 +273,49 @@ lua/mrreviewer/comments/
 
 ## Priority 4: Tooling & Documentation
 
-### 4.1 Development Infrastructure
+### 4.1 Development Infrastructure ✅ COMPLETE
 **Estimated effort:** 3-4 hours
+**Completed:** 2025-10-17
 
 - [x] Add `.stylua.toml` for consistent formatting
-  ```toml
-  column_width = 100
-  line_endings = "Unix"
-  indent_type = "Spaces"
-  indent_width = 2
-  quote_style = "AutoPreferSingle"
-  ```
+  - 100 char column width, 4-space indentation
+  - Auto-prefer single quotes
+  - Never collapse simple statements
 - [x] Add `.luacheckrc` for linting
+  - LuaJIT standard with Neovim globals
+  - Max line length 100, max cyclomatic complexity 15
+  - Test-specific configuration for plenary.busted
 - [x] Add `.editorconfig`
-- [ ] Set up GitHub Actions CI
-  - [ ] Run tests on PR
-  - [ ] Check formatting
-  - [ ] Run linter
-  - [ ] Generate coverage report
+  - Universal editor settings (UTF-8, LF, trim trailing whitespace)
+  - File-type specific indentation rules
+- [ ] ~~Set up GitHub Actions CI~~ (Skipped per user request)
 - [x] Add pre-commit hooks
-  - [x] Format with stylua
-  - [x] Run luacheck
-  - [x] Run tests
+  - `hooks/pre-commit`: Runs stylua, luacheck, and tests
+  - `hooks/README.md`: Installation and usage guide
+  - Automatically formats code and blocks bad commits
+
+**Results:**
+- Complete development tooling infrastructure
+- Consistent code formatting across editors
+- Automated code quality checks via pre-commit hook
+- All configuration files work together harmoniously
 
 ### 4.2 Documentation
 **Estimated effort:** 4-5 hours
 
-- [ ] Create `CONTRIBUTING.md`
-  - [ ] Development setup
-  - [ ] Running tests
-  - [ ] Code style guide
-  - [ ] PR process
-- [ ] Create `CHANGELOG.md`
-  - [ ] Document all releases
-  - [ ] Follow Keep a Changelog format
-- [ ] Create `examples/` directory
-  - [ ] Basic usage example
-  - [ ] Custom configuration examples
-  - [ ] Integration examples
-- [ ] Improve API documentation
-  - [ ] Document all public functions
-  - [ ] Add usage examples
-  - [ ] Generate API docs with ldoc
+- [x] Create `CONTRIBUTING.md`
+  - [x] Development setup
+  - [x] Running tests
+  - [x] Code style guide
+  - [x] PR process
+- [x] Create `CHANGELOG.md`
+  - [x] Document all releases
+  - [x] Follow Keep a Changelog format
+- [ ] ~~Create `examples/` directory~~ (Skipped per user request)
+- [x] Improve API documentation
+  - [x] Document all public functions
+  - [x] Add usage examples
+  - [ ] ~~Generate API docs with ldoc~~ (Manual docs in docs/API.md instead)
 
 ### 4.3 Testing Infrastructure
 **Estimated effort:** 2-3 hours
