@@ -82,6 +82,26 @@ use {
 }
 ```
 
+### Using [mini.deps](https://github.com/echasnovski/mini.deps)
+
+```lua
+local add = require('mini.deps').add
+
+-- Add dependencies first
+add('nvim-lua/plenary.nvim')
+add('nvim-telescope/telescope.nvim')  -- Optional but recommended
+
+-- Add mrreviewer
+add({
+  source = 'yourusername/mrreviewer',
+})
+
+-- Setup the plugin
+require('mrreviewer').setup({
+  -- Configuration options (see below)
+})
+```
+
 ## Configuration
 
 Default configuration:
