@@ -164,6 +164,9 @@ function M.review(mr_number)
       return
     end
 
+    -- Store comments in MR data for diffview
+    mr_data.comments = comments
+
     -- Store MR data in plugin state
     local mrreviewer = require('mrreviewer')
     mrreviewer.state.current_mr = {
@@ -181,8 +184,15 @@ function M.review(mr_number)
       'info'
     )
 
-    -- Open diff view
-    diff.open(mr_data)
+    -- Open diffview (new three-pane interface)
+    local diffview = require('mrreviewer.ui.diffview')
+    local success = diffview.open(mr_data)
+
+    -- Fallback to old diff view if diffview fails
+    if not success then
+      utils.notify('Falling back to classic diff view', 'warn')
+      diff.open(mr_data)
+    end
   end)
 end
 

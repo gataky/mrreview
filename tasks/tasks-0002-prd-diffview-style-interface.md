@@ -38,9 +38,9 @@ Generated from: `0002-prd-diffview-style-interface.md`
 - `lua/mrreviewer/ui/diffview/diff_panel.lua` - Side-by-side diff rendering with render(), update_file(), highlight_comment_line(), scrollbind/cursorbind support ✓ Created
 - `lua/mrreviewer/ui/diffview/comments_panel.lua` - Comments list with filtering, minimal formatting, group_by_file(), filter_by_status(), toggle_resolved_filter(), and keymap setup ✓ Created
 - `lua/mrreviewer/ui/diffview/navigation.lua` - Bidirectional navigation with jump_to_comment(), highlight_comment_in_panel(), setup_diff_cursor_moved(), find_comment_at_line(), open_full_comment_thread(), and autocmd cleanup ✓ Created
+- `lua/mrreviewer/ui/diffview/init.lua` - Main diffview API with open(), close(), is_open(), toggle(), refresh(), error handling with errors.try(), and graceful degradation ✓ Created
 
 ### New Files to Create
-- `lua/mrreviewer/ui/diffview/init.lua` - Main diffview API and entry point
 - `tests/diffview_spec.lua` - Unit tests for diffview module
 - `tests/diffview_layout_spec.lua` - Unit tests for layout module
 - `tests/diffview_file_panel_spec.lua` - Unit tests for file panel module
@@ -55,11 +55,11 @@ Generated from: `0002-prd-diffview-style-interface.md`
 - `lua/mrreviewer/core/config.lua` - Added `diffview` configuration options (highlight_duration, default_focus, show_resolved) ✓ Modified
 - `lua/mrreviewer/ui/highlights.lua` - Added diffview-specific highlight groups (MRReviewerCommentCount, MRReviewerCommentHighlight, MRReviewerSelectedComment, MRReviewerCommentFileHeader, MRReviewerResolvedComment, MRReviewerUnresolvedComment) ✓ Modified
 - `lua/mrreviewer/ui/comments/formatting.lua` - Added `format_minimal()` function for single-line comment display in comments panel ✓ Modified
+- `lua/mrreviewer/api/commands.lua` - Updated `review()` function to call `diffview.open()` with graceful fallback to classic diff view ✓ Modified
 - `tests/state_spec.lua` - Added 11 comprehensive tests for diffview state management (getter, setters, validation, clear, timer cancellation) ✓ Modified
 - `tests/config_spec.lua` - Added 6 comprehensive tests for diffview configuration (defaults, overrides, deep merge) ✓ Modified
 
 ### Files to Modify
-- `lua/mrreviewer/api/commands.lua` - Update `review()` function to call `diffview.open()` instead of `diff.open()`
 
 ### Notes
 
@@ -135,15 +135,15 @@ Generated from: `0002-prd-diffview-style-interface.md`
   - [x] 6.7 Handle highlight timer cleanup: store timer in `state.diffview.highlight_timer`, cancel previous timer before creating new one using `vim.fn.timer_stop()`
   - [x] 6.8 Ensure cursor remains in comments pane after jump (use `vim.api.nvim_set_current_win()` to restore focus)
 
-- [ ] 7.0 Integrate Diffview into Commands API
-  - [ ] 7.1 Create `lua/mrreviewer/ui/diffview/init.lua` as main entry point
-  - [ ] 7.2 Implement `diffview.open(mr_data)` function that: validates mr_data, calls layout.create_layout(), populates all three panels, sets up navigation
-  - [ ] 7.3 Implement `diffview.close()` function that calls layout.close() and state.clear_diffview()
-  - [ ] 7.4 Add error handling wrapper using `errors.try()` for all major operations
-  - [ ] 7.5 Update `lua/mrreviewer/api/commands.lua` line 185: change `diff.open(mr_data)` to `require('mrreviewer.ui.diffview').open(mr_data)`
-  - [ ] 7.6 Implement graceful degradation: if diffview errors occur, log error and optionally fall back to old diff view (configurable)
-  - [ ] 7.7 Add `vim.notify()` notifications for loading states: "Opening diffview...", "Diffview ready"
-  - [ ] 7.8 Ensure all errors are logged using `logger.log_error()`
+- [x] 7.0 Integrate Diffview into Commands API
+  - [x] 7.1 Create `lua/mrreviewer/ui/diffview/init.lua` as main entry point
+  - [x] 7.2 Implement `diffview.open(mr_data)` function that: validates mr_data, calls layout.create_layout(), populates all three panels, sets up navigation
+  - [x] 7.3 Implement `diffview.close()` function that calls layout.close() and state.clear_diffview()
+  - [x] 7.4 Add error handling wrapper using `errors.try()` for all major operations
+  - [x] 7.5 Update `lua/mrreviewer/api/commands.lua` line 185: change `diff.open(mr_data)` to `require('mrreviewer.ui.diffview').open(mr_data)`
+  - [x] 7.6 Implement graceful degradation: if diffview errors occur, log error and optionally fall back to old diff view (configurable)
+  - [x] 7.7 Add `vim.notify()` notifications for loading states: "Opening diffview...", "Diffview ready"
+  - [x] 7.8 Ensure all errors are logged using `logger.log_error()`
 
 - [ ] 8.0 Add Tests and Documentation
   - [x] 8.1 Create `justfile` (or `Makefile` if preferred) in project root with test commands:
