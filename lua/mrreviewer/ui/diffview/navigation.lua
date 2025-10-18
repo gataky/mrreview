@@ -89,8 +89,16 @@ end
 --- @param mr_data table|nil MR data (required if switching files)
 --- @return boolean Success status
 function M.jump_to_comment(comment, highlight_duration, mr_data)
+  logger.debug('navigation', 'jump_to_comment called', {
+    has_comment = comment ~= nil,
+    has_position = comment and comment.position ~= nil,
+    has_mr_data = mr_data ~= nil,
+  })
+
   if not comment or not comment.position then
-    logger.error('navigation','Invalid comment or missing position for jump')
+    logger.error('navigation','Invalid comment or missing position for jump', {
+      comment = comment,
+    })
     return false
   end
 
@@ -98,7 +106,9 @@ function M.jump_to_comment(comment, highlight_duration, mr_data)
   local line_number = comment.position.new_line or comment.position.old_line
 
   if not file_path or not line_number then
-    logger.error('navigation','Missing file path or line number in comment position')
+    logger.error('navigation','Missing file path or line number in comment position', {
+      position = comment.position,
+    })
     return false
   end
 

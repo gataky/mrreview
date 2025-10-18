@@ -54,8 +54,14 @@ function M.get_comment_at_cursor()
   local line = vim.api.nvim_get_current_line()
   local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
 
+  logger.debug('comments_panel', 'get_comment_at_cursor called', {
+    line = line,
+    cursor_line = cursor_line,
+  })
+
   -- Check if this is a comment line (starts with "Line ")
   if not line:match('^Line %d+') then
+    logger.debug('comments_panel', 'Not a comment line', { line = line })
     return nil
   end
 
@@ -64,11 +70,13 @@ function M.get_comment_at_cursor()
   local panel_buffers = diffview.panel_buffers
 
   if not panel_buffers or not panel_buffers.comments then
+    logger.debug('comments_panel', 'No comments panel buffer in state')
     return nil
   end
 
   local buf = panel_buffers.comments
   if not vim.api.nvim_buf_is_valid(buf) then
+    logger.debug('comments_panel', 'Comments panel buffer is invalid')
     return nil
   end
 
@@ -76,10 +84,17 @@ function M.get_comment_at_cursor()
   -- We'll store comment references in buffer variables
   local ok, comment_map = pcall(vim.api.nvim_buf_get_var, buf, 'mrreviewer_comment_map')
   if not ok or not comment_map then
+    logger.debug('comments_panel', 'No comment map found in buffer', { ok = ok })
     return nil
   end
 
-  return comment_map[cursor_line]
+  local comment = comment_map[cursor_line]
+  logger.debug('comments_panel', 'Found comment', {
+    has_comment = comment ~= nil,
+    comment_id = comment and comment.id,
+  })
+
+  return comment
 end
 
 --- Setup keymaps for the comments panel buffer
@@ -89,13 +104,26 @@ end
 function M.setup_keymaps(buf, on_comment_selected_callback, on_open_thread_callback)
   local opts = { noremap = true, silent = true, buffer = buf }
 
+  logger.debug('comments_panel', 'Setting up keymaps for buffer ' .. buf)
+
   -- j/k navigation (standard vim motions work by default)
 
   -- Enter to jump to comment in diff view
   vim.keymap.set('n', '<CR>', function()
+    logger.debug('comments_panel', '<CR> pressed in comments panel')
     local comment = M.get_comment_at_cursor()
+    logger.debug('comments_panel', 'Got comment from cursor', {
+      has_comment = comment ~= nil,
+      has_callback = on_comment_selected_callback ~= nil,
+    })
     if comment and on_comment_selected_callback then
+      logger.info('comments_panel', 'Calling on_comment_selected callback')
       on_comment_selected_callback(comment)
+    else
+      logger.warn('comments_panel', 'No comment or callback', {
+        has_comment = comment ~= nil,
+        has_callback = on_comment_selected_callback ~= nil,
+      })
     end
   end, opts)
 

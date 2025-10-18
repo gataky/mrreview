@@ -123,7 +123,10 @@ function M.open(mr_data)
         files,
         panel_buffers.comments,
         function(comment)
-          navigation.jump_to_comment(comment, nil, mr_data)
+          -- Jump to comment and briefly show, then return focus to comments panel
+          vim.schedule(function()
+            navigation.jump_to_comment(comment, config.get_value('diffview.highlight_duration'), mr_data)
+          end)
         end,
         function(comment)
           navigation.open_full_comment_thread(comment)
@@ -150,7 +153,10 @@ function M.open(mr_data)
       files,
       panel_buffers.comments,
       function(comment)
-        navigation.jump_to_comment(comment, nil, mr_data)
+        -- Jump to comment and briefly show, then return focus to comments panel
+        vim.schedule(function()
+          navigation.jump_to_comment(comment, config.get_value('diffview.highlight_duration'), mr_data)
+        end)
       end,
       function(comment)
         navigation.open_full_comment_thread(comment)
