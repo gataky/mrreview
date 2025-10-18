@@ -6,6 +6,53 @@ local state = require('mrreviewer.core.state')
 local logger = require('mrreviewer.core.logger')
 local highlights = require('mrreviewer.ui.highlights')
 
+--- Check if a directory is collapsed
+--- @param dir_path string The directory path to check
+--- @return boolean True if directory is collapsed
+function M.is_directory_collapsed(dir_path)
+  local diffview = state.get_diffview()
+  return diffview.collapsed_dirs[dir_path] == true
+end
+
+--- Toggle directory collapse/expand state
+--- @param dir_path string The directory path to toggle
+--- @return boolean New collapsed state (true if now collapsed)
+function M.toggle_directory(dir_path)
+  if not dir_path or dir_path == '' then
+    logger.warn('file_panel', 'toggle_directory called with invalid path')
+    return false
+  end
+
+  local diffview = state.get_diffview()
+  local current_state = diffview.collapsed_dirs[dir_path]
+
+  -- Toggle the state
+  if current_state then
+    diffview.collapsed_dirs[dir_path] = nil -- Remove from table (expanded)
+    logger.info('file_panel', 'Expanded directory', { path = dir_path })
+    return false
+  else
+    diffview.collapsed_dirs[dir_path] = true -- Add to table (collapsed)
+    logger.info('file_panel', 'Collapsed directory', { path = dir_path })
+    return true
+  end
+end
+
+--- Collapse all directories in the tree
+function M.collapse_all()
+  -- This will be called with the tree structure to collapse all directories
+  -- For now, we'll implement this when we have the tree rendering
+  logger.info('file_panel', 'Collapse all directories')
+  -- Implementation will be added when tree rendering is complete
+end
+
+--- Expand all directories in the tree
+function M.expand_all()
+  local diffview = state.get_diffview()
+  diffview.collapsed_dirs = {}
+  logger.info('file_panel', 'Expanded all directories')
+end
+
 --- Calculate comment counts for a specific file
 --- @param file_path string The file path to count comments for
 --- @param comments table List of all comments

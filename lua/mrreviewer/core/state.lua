@@ -40,6 +40,7 @@ M._state = {
     selected_comment = nil,
     highlight_timer = nil,
     filter_resolved = false,
+    collapsed_dirs = {}, -- Track collapsed directory paths: {[dir_path] = true}
   },
 }
 
@@ -200,6 +201,7 @@ function M.clear_diffview()
   M._state.diffview.selected_comment = nil
   M._state.diffview.highlight_timer = nil
   M._state.diffview.filter_resolved = false
+  M._state.diffview.collapsed_dirs = {}
 end
 
 --- Clear all state
@@ -346,6 +348,11 @@ function M.validate(state)
       errors.validation_error('state.diffview.filter_resolved must be a boolean')
   end
 
+  if type(state.diffview.collapsed_dirs) ~= 'table' then
+    return false,
+      errors.validation_error('state.diffview.collapsed_dirs must be a table')
+  end
+
   return true, nil
 end
 
@@ -378,6 +385,7 @@ function M.reset()
       selected_comment = nil,
       highlight_timer = nil,
       filter_resolved = false,
+      collapsed_dirs = {},
     },
   }
 end

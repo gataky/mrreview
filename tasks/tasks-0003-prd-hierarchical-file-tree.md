@@ -47,14 +47,14 @@ Generated from: `0003-prd-hierarchical-file-tree.md`
 - [x] 2.7 Add comment count integration for file nodes using `calculate_comment_counts()`
 - [ ] 2.8 Add unit tests for tree building with various file path structures
 
-### 3.0 Add Collapse/Expand State Management
-- [ ] 3.1 Add `collapsed_dirs` field to diffview state in `core/state.lua`
-- [ ] 3.2 Implement `toggle_directory(dir_path)` function in `file_panel.lua`
-- [ ] 3.3 Update state when directory is collapsed/expanded
-- [ ] 3.4 Implement `is_directory_collapsed(dir_path)` helper function
-- [ ] 3.5 Add state persistence across re-renders
-- [ ] 3.6 Implement `collapse_all()` and `expand_all()` utility functions
-- [ ] 3.7 Update `clear_diffview()` in state.lua to clear collapsed_dirs
+### 3.0 Add Collapse/Expand State Management ✓
+- [x] 3.1 Add `collapsed_dirs` field to diffview state in `core/state.lua`
+- [x] 3.2 Implement `toggle_directory(dir_path)` function in `file_panel.lua`
+- [x] 3.3 Update state when directory is collapsed/expanded
+- [x] 3.4 Implement `is_directory_collapsed(dir_path)` helper function
+- [x] 3.5 Add state persistence across re-renders
+- [x] 3.6 Implement `collapse_all()` and `expand_all()` utility functions
+- [x] 3.7 Update `clear_diffview()` in state.lua to clear collapsed_dirs
 
 ### 4.0 Implement Tree Rendering with Visual Hierarchy
 - [ ] 4.1 Implement `flatten_visible_nodes(tree, collapsed_state)` function
