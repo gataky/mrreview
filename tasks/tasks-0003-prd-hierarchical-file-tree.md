@@ -28,7 +28,7 @@ Generated from: `0003-prd-hierarchical-file-tree.md`
 
 ## Tasks
 
-### 1.0 Create Node-Based Tree Data Structure
+### 1.0 Create Node-Based Tree Data Structure ✓
 - [x] 1.1 Create new file `lua/mrreviewer/ui/diffview/file_tree.lua`
 - [x] 1.2 Define Node class/table structure with fields: name, path, kind, parent, children, depth, collapsed, comment_count
 - [x] 1.3 Implement `Node.new(name, path, kind, parent, depth)` constructor function
