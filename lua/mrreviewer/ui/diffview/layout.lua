@@ -84,6 +84,14 @@ function M.create_three_pane_windows()
   local diff_old_win = vim.api.nvim_get_current_win()
   vim.api.nvim_win_set_buf(diff_old_win, diff_old_buf)
 
+  -- Equalize the diff window widths
+  vim.cmd('wincmd =')
+
+  -- Calculate exact width for each diff pane (half of diff_width)
+  local half_diff_width = math.floor(diff_width / 2)
+  vim.api.nvim_win_set_width(diff_old_win, half_diff_width)
+  vim.api.nvim_win_set_width(diff_new_win, half_diff_width)
+
   -- Move to the rightmost section and create comments pane (20%)
   vim.cmd('wincmd l')
   vim.cmd('wincmd l')
