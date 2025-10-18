@@ -59,8 +59,8 @@ function M.get_comment_at_cursor()
     cursor_line = cursor_line,
   })
 
-  -- Check if this is a comment line (starts with "Line ")
-  if not line:match('^Line %d+') then
+  -- Check if this is a comment line (starts with "  Line " - note the leading spaces)
+  if not line:match('^%s*Line %d+') then
     logger.debug('comments_panel', 'Not a comment line', { line = line })
     return nil
   end
@@ -362,8 +362,8 @@ function M.apply_highlighting(buf, grouped, files)
         0,
         -1
       )
-    -- Highlight comment lines
-    elseif line:match('^Line %d+') then
+    -- Highlight comment lines (note: format has leading spaces)
+    elseif line:match('^%s*Line %d+') then
       -- Get comment from map to check resolved status
       local ok, comment_map = pcall(vim.api.nvim_buf_get_var, buf, 'mrreviewer_comment_map')
       if ok and comment_map and comment_map[i] then
