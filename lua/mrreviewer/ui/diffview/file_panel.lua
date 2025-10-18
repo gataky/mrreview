@@ -239,66 +239,80 @@ local function apply_tree_highlights(buf, visible_nodes, indent_size)
 
   for line_idx, node in ipairs(visible_nodes) do
     local line_num = line_idx - 1 -- 0-indexed for nvim API
-    local col = 0
+    local line = vim.api.nvim_buf_get_lines(buf, line_num, line_num + 1, false)[1]
+    if not line then
+      goto continue
+    end
+
+    -- Use byte offsets instead of display width for accurate highlighting
+    local byte_offset = 0
 
     -- Highlight indentation (subtle guide lines)
     if node.depth > 0 then
-      local indent_len = node.depth * indent_size
+      local indent_bytes = node.depth * indent_size
       vim.api.nvim_buf_add_highlight(
         buf,
         ns_id,
         highlights.get_group('tree_indent'),
         line_num,
-        col,
-        col + indent_len
+        byte_offset,
+        byte_offset + indent_bytes
       )
-      col = col + indent_len
+      byte_offset = byte_offset + indent_bytes
     end
 
-    -- Highlight icon
-    local icon_len = vim.fn.strwidth(
-      node:is_dir()
-        and (state.get_diffview().collapsed_dirs[node.path]
-          and (config.get_value('diffview.file_tree.dir_collapsed_icon') or '▸')
-          or (config.get_value('diffview.file_tree.dir_expanded_icon') or '▾'))
-        or (config.get_value('diffview.file_tree.file_icon') or '•')
-    )
+    -- Get the actual icon from config
+    local icon
+    if node:is_dir() then
+      if state.get_diffview().collapsed_dirs[node.path] then
+        icon = config.get_value('diffview.file_tree.dir_collapsed_icon') or '▸'
+      else
+        icon = config.get_value('diffview.file_tree.dir_expanded_icon') or '▾'
+      end
+    else
+      icon = config.get_value('diffview.file_tree.file_icon') or '•'
+    end
+
+    -- Highlight icon (use byte length, not display width)
+    local icon_bytes = #icon
     vim.api.nvim_buf_add_highlight(
       buf,
       ns_id,
       node:is_dir() and highlights.get_group('folder_sign') or highlights.get_group('file_sign'),
       line_num,
-      col,
-      col + icon_len
+      byte_offset,
+      byte_offset + icon_bytes
     )
-    col = col + icon_len + 1 -- +1 for space after icon
+    byte_offset = byte_offset + icon_bytes + 1 -- +1 for space after icon
 
-    -- Highlight name
-    local name_len = vim.fn.strwidth(node.name)
+    -- Highlight name (use byte length of name)
+    local name_bytes = #node.name
     vim.api.nvim_buf_add_highlight(
       buf,
       ns_id,
       node:is_dir() and highlights.get_group('folder_name') or highlights.get_group('file_name'),
       line_num,
-      col,
-      col + name_len
+      byte_offset,
+      byte_offset + name_bytes
     )
-    col = col + name_len
+    byte_offset = byte_offset + name_bytes
 
     -- Highlight comment count if present
     if node:is_file() and node.comment_count and node.comment_count.total > 0 then
       -- Skip the "  " before the comment icon
-      col = col + 2
+      byte_offset = byte_offset + 2
       -- Highlight the entire comment count display
       vim.api.nvim_buf_add_highlight(
         buf,
         ns_id,
         highlights.get_group('comment_count'),
         line_num,
-        col,
+        byte_offset,
         -1 -- to end of line
       )
     end
+
+    ::continue::
   end
 end
 
