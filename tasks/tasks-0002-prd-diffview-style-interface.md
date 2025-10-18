@@ -37,10 +37,10 @@ Generated from: `0002-prd-diffview-style-interface.md`
 - `lua/mrreviewer/ui/diffview/file_panel.lua` - File tree panel with render(), calculate_comment_counts(), natural sorting, highlighting, and keymap setup ✓ Created
 - `lua/mrreviewer/ui/diffview/diff_panel.lua` - Side-by-side diff rendering with render(), update_file(), highlight_comment_line(), scrollbind/cursorbind support ✓ Created
 - `lua/mrreviewer/ui/diffview/comments_panel.lua` - Comments list with filtering, minimal formatting, group_by_file(), filter_by_status(), toggle_resolved_filter(), and keymap setup ✓ Created
+- `lua/mrreviewer/ui/diffview/navigation.lua` - Bidirectional navigation with jump_to_comment(), highlight_comment_in_panel(), setup_diff_cursor_moved(), find_comment_at_line(), open_full_comment_thread(), and autocmd cleanup ✓ Created
 
 ### New Files to Create
 - `lua/mrreviewer/ui/diffview/init.lua` - Main diffview API and entry point
-- `lua/mrreviewer/ui/diffview/navigation.lua` - Bidirectional navigation and comment highlighting
 - `tests/diffview_spec.lua` - Unit tests for diffview module
 - `tests/diffview_layout_spec.lua` - Unit tests for layout module
 - `tests/diffview_file_panel_spec.lua` - Unit tests for file panel module
@@ -125,15 +125,15 @@ Generated from: `0002-prd-diffview-style-interface.md`
   - [x] 5.9 Implement `comments_panel.get_comment_at_cursor()` helper to extract comment data from current cursor line
   - [x] 5.10 Handle empty state: leave buffer blank when no comments match filter
 
-- [ ] 6.0 Implement Bidirectional Navigation and Highlighting
-  - [ ] 6.1 Create `lua/mrreviewer/ui/diffview/navigation.lua` module
-  - [ ] 6.2 Implement `navigation.jump_to_comment(comment, highlight_duration)` function that: switches to correct file in diff panel, scrolls to line, highlights line with configured duration
-  - [ ] 6.3 Implement `navigation.highlight_comment_in_panel(comment_id)` to highlight corresponding comment in comments panel
-  - [ ] 6.4 Implement `navigation.setup_diff_cursor_moved()` autocmd that detects when cursor moves in diff view and highlights matching comment (use `vim.api.nvim_create_autocmd('CursorMoved')`)
-  - [ ] 6.5 Implement `navigation.find_comment_at_line(file_path, line_number, comments)` helper to find comment for given file/line
-  - [ ] 6.6 Implement `navigation.open_full_comment_thread(comment)` that reuses existing `ui/comments` floating window logic (call `comments.show_float()` with comment data)
-  - [ ] 6.7 Handle highlight timer cleanup: store timer in `state.diffview.highlight_timer`, cancel previous timer before creating new one using `vim.fn.timer_stop()`
-  - [ ] 6.8 Ensure cursor remains in comments pane after jump (use `vim.api.nvim_set_current_win()` to restore focus)
+- [x] 6.0 Implement Bidirectional Navigation and Highlighting
+  - [x] 6.1 Create `lua/mrreviewer/ui/diffview/navigation.lua` module
+  - [x] 6.2 Implement `navigation.jump_to_comment(comment, highlight_duration)` function that: switches to correct file in diff panel, scrolls to line, highlights line with configured duration
+  - [x] 6.3 Implement `navigation.highlight_comment_in_panel(comment_id)` to highlight corresponding comment in comments panel
+  - [x] 6.4 Implement `navigation.setup_diff_cursor_moved()` autocmd that detects when cursor moves in diff view and highlights matching comment (use `vim.api.nvim_create_autocmd('CursorMoved')`)
+  - [x] 6.5 Implement `navigation.find_comment_at_line(file_path, line_number, comments)` helper to find comment for given file/line
+  - [x] 6.6 Implement `navigation.open_full_comment_thread(comment)` that reuses existing `ui/comments` floating window logic (call `comments.show_float()` with comment data)
+  - [x] 6.7 Handle highlight timer cleanup: store timer in `state.diffview.highlight_timer`, cancel previous timer before creating new one using `vim.fn.timer_stop()`
+  - [x] 6.8 Ensure cursor remains in comments pane after jump (use `vim.api.nvim_set_current_win()` to restore focus)
 
 - [ ] 7.0 Integrate Diffview into Commands API
   - [ ] 7.1 Create `lua/mrreviewer/ui/diffview/init.lua` as main entry point
