@@ -470,6 +470,10 @@ function M.render(files, comments, buf, on_file_selected_callback)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   vim.api.nvim_buf_set_option(buf, 'modifiable', false)
 
+  -- Disable line numbers to conserve space
+  vim.api.nvim_buf_set_option(buf, 'number', false)
+  vim.api.nvim_buf_set_option(buf, 'relativenumber', false)
+
   -- Store node metadata in buffer variable (task 4.8)
   vim.api.nvim_buf_set_var(buf, 'mrreviewer_file_tree_nodes', node_metadata)
 
