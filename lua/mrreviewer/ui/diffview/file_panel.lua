@@ -5,6 +5,8 @@ local M = {}
 local state = require('mrreviewer.core.state')
 local logger = require('mrreviewer.core.logger')
 local highlights = require('mrreviewer.ui.highlights')
+local file_tree = require('mrreviewer.ui.diffview.file_tree')
+local config = require('mrreviewer.core.config')
 
 --- Check if a directory is collapsed
 --- @param dir_path string The directory path to check
@@ -184,11 +186,16 @@ local function highlight_selected_file(buf, selected_file)
   local ns_id = vim.api.nvim_create_namespace('mrreviewer_file_panel')
   vim.api.nvim_buf_clear_namespace(buf, ns_id, 0, -1)
 
-  -- Find the line containing the selected file
-  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-  for i, line in ipairs(lines) do
-    local file_path = line:match('^%s*(.-)%s*💬') or line:match('^%s*(.-)%s*$')
-    if file_path == selected_file then
+  -- Get node metadata from buffer (task 4.7)
+  local ok, node_metadata = pcall(vim.api.nvim_buf_get_var, buf, 'mrreviewer_file_tree_nodes')
+  if not ok or not node_metadata then
+    logger.warn('file_panel', 'No node metadata found in buffer for highlighting')
+    return
+  end
+
+  -- Find the line containing the selected file by matching node path (task 4.7)
+  for i, node_info in ipairs(node_metadata) do
+    if node_info.kind == 'file' and node_info.path == selected_file then
       -- Highlight this line (0-indexed)
       vim.api.nvim_buf_add_highlight(
         buf,
@@ -203,7 +210,7 @@ local function highlight_selected_file(buf, selected_file)
   end
 end
 
---- Render the file panel with comment indicators
+--- Render the file panel with hierarchical tree structure
 --- @param files table List of file paths
 --- @param comments table List of comments
 --- @param buf number|nil Buffer ID (if nil, uses current diffview buffer)
@@ -225,24 +232,58 @@ function M.render(files, comments, buf, on_file_selected_callback)
     return
   end
 
-  -- Sort files naturally
-  local sorted_files = sort_files_naturally(files)
+  -- Build tree from file paths (tasks 4.3)
+  local tree = file_tree.build_tree(files, comments)
 
-  -- Build content lines
+  -- Get collapsed state from diffview
+  local diffview = state.get_diffview()
+  local collapsed_state = diffview.collapsed_dirs or {}
+
+  -- Flatten visible nodes respecting collapsed state (task 4.3)
+  local visible_nodes = file_tree.flatten_visible_nodes(tree, collapsed_state)
+
+  -- Get configuration values (task 4.4)
+  local indent_size = config.get_value('diffview.file_tree.indent') or 2
+  local dir_collapsed_icon = config.get_value('diffview.file_tree.dir_collapsed_icon') or '▸'
+  local dir_expanded_icon = config.get_value('diffview.file_tree.dir_expanded_icon') or '▾'
+  local file_icon = config.get_value('diffview.file_tree.file_icon') or '•'
+
+  -- Build content lines with tree formatting (tasks 4.4, 4.5, 4.6)
   local lines = {}
-  for _, file_path in ipairs(sorted_files) do
-    local counts = M.calculate_comment_counts(file_path, comments)
+  local node_metadata = {} -- Store node info for each line (task 4.8)
 
-    local line
-    if counts.total > 0 then
-      -- Format: "  <filename>  💬 <resolved>/<total>"
-      line = string.format('  %s  💬 %d/%d', file_path, counts.resolved, counts.total)
+  for _, node in ipairs(visible_nodes) do
+    -- Calculate indentation based on depth (task 4.4)
+    local indent = string.rep(' ', node.depth * indent_size)
+
+    -- Determine icon based on node type and state (task 4.5)
+    local icon
+    if node:is_dir() then
+      if collapsed_state[node.path] then
+        icon = dir_collapsed_icon
+      else
+        icon = dir_expanded_icon
+      end
     else
-      -- Format: "  <filename>"
-      line = string.format('  %s', file_path)
+      icon = file_icon
+    end
+
+    -- Build line with indentation, icon, and name
+    local line = indent .. icon .. ' ' .. node.name
+
+    -- Add comment count for files (task 4.6)
+    if node:is_file() and node.comment_count and node.comment_count.total > 0 then
+      line = line .. string.format('  💬 %d/%d', node.comment_count.resolved, node.comment_count.total)
     end
 
     table.insert(lines, line)
+
+    -- Store node metadata for cursor operations (task 4.8)
+    table.insert(node_metadata, {
+      path = node.path,
+      kind = node.kind,
+      depth = node.depth,
+    })
   end
 
   -- Set buffer content
@@ -250,14 +291,16 @@ function M.render(files, comments, buf, on_file_selected_callback)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   vim.api.nvim_buf_set_option(buf, 'modifiable', false)
 
+  -- Store node metadata in buffer variable (task 4.8)
+  vim.api.nvim_buf_set_var(buf, 'mrreviewer_file_tree_nodes', node_metadata)
+
   -- Apply highlighting for selected file
-  local diffview = state.get_diffview()
   highlight_selected_file(buf, diffview.selected_file)
 
   -- Setup keymaps
   M.setup_keymaps(buf, on_file_selected_callback)
 
-  logger.info('file_panel','File panel rendered with ' .. #sorted_files .. ' files')
+  logger.info('file_panel','File panel rendered with ' .. #visible_nodes .. ' visible nodes')
 end
 
 return M

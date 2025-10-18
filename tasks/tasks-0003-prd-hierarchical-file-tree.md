@@ -56,15 +56,15 @@ Generated from: `0003-prd-hierarchical-file-tree.md`
 - [x] 3.6 Implement `collapse_all()` and `expand_all()` utility functions
 - [x] 3.7 Update `clear_diffview()` in state.lua to clear collapsed_dirs
 
-### 4.0 Implement Tree Rendering with Visual Hierarchy
+### 4.0 Implement Tree Rendering with Visual Hierarchy ✓
 - [x] 4.1 Implement `flatten_visible_nodes(tree, collapsed_state)` function
 - [x] 4.2 Add depth-first traversal that skips children of collapsed directories
-- [ ] 4.3 Update `render()` function in `file_panel.lua` to use tree rendering
-- [ ] 4.4 Implement indentation based on node depth (configurable spaces)
-- [ ] 4.5 Add visual indicators: ▾ (expanded), ▸ (collapsed), • (file)
-- [ ] 4.6 Preserve comment count display for files: "💬 resolved/total"
-- [ ] 4.7 Update `highlight_selected_file()` to parse tree format lines
-- [ ] 4.8 Store node metadata in buffer variables for cursor operations
+- [x] 4.3 Update `render()` function in `file_panel.lua` to use tree rendering
+- [x] 4.4 Implement indentation based on node depth (configurable spaces)
+- [x] 4.5 Add visual indicators: ▾ (expanded), ▸ (collapsed), • (file)
+- [x] 4.6 Preserve comment count display for files: "💬 resolved/total"
+- [x] 4.7 Update `highlight_selected_file()` to parse tree format lines
+- [x] 4.8 Store node metadata in buffer variables for cursor operations
 
 ### 5.0 Enhance Navigation for Tree Structure
 - [ ] 5.1 Update `get_file_at_cursor()` to detect both files and directories
