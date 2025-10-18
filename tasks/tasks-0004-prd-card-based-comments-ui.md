@@ -4,7 +4,8 @@
 - `lua/mrreviewer/ui/comments/formatting.lua` - Comment formatting utilities, will need new card formatting functions
 - `lua/mrreviewer/ui/highlights.lua` - Highlight groups, will need new groups for cards and selection states
 - `lua/mrreviewer/core/state.lua` - State management for tracking selected card and collapsed sections
-- `lua/mrreviewer/ui/comments/card_renderer.lua` - **[CREATED]** New module for card rendering logic with function stubs and documentation
+- `lua/mrreviewer/ui/comments/card_renderer.lua` - **[CREATED]** Card rendering module with complete implementation
+- `lua/mrreviewer/ui/diffview/comments_panel.lua` - **[MODIFIED]** Updated render() function to use card-based rendering
 - `lua/mrreviewer/ui/comments/card_navigator.lua` - New module for card-level navigation logic
 
 ### Notes
@@ -17,7 +18,7 @@
 
 ## Tasks
 
-- [ ] 1.0 Create card data structure and rendering module
+- [x] 1.0 Create card data structure and rendering module
   - [x] 1.1 Create `lua/mrreviewer/ui/comments/card_renderer.lua` module with basic structure and documentation
   - [x] 1.2 Define card data structure: `{id, comments, file_path, line_range, is_thread, resolved}`
   - [x] 1.3 Implement `group_comments_into_cards()` function to convert comment list into card list by grouping by `discussion_id`
@@ -28,14 +29,14 @@
   - [x] 1.8 Add unit helper `get_card_height()` to calculate number of lines a card occupies in buffer
 
 - [ ] 2.0 Implement card-based buffer rendering with visual card boundaries
-  - [ ] 2.1 Update `comments_panel.lua` `render()` function to use card-based rendering instead of line-based
-  - [ ] 2.2 Build card list from grouped comments using `card_renderer.group_comments_into_cards()`
-  - [ ] 2.3 Create new `card_map` structure mapping line ranges to card objects (replaces single-line comment_map)
-  - [ ] 2.4 Render file headers with comment count (e.g., "📁 src/main.lua (3 comments)")
-  - [ ] 2.5 Iterate through cards and render each with `card_renderer.render_card_with_borders()`
-  - [ ] 2.6 Store `card_map` in buffer variable `mrreviewer_card_map` for navigation lookup
-  - [ ] 2.7 Update `apply_highlighting()` to handle card-based structure (highlight entire cards, not individual lines)
-  - [ ] 2.8 Add special handling for cards with resolved status (dim entire card using dedicated highlight group)
+  - [x] 2.1 Update `comments_panel.lua` `render()` function to use card-based rendering instead of line-based
+  - [x] 2.2 Build card list from grouped comments using `card_renderer.group_comments_into_cards()`
+  - [x] 2.3 Create new `card_map` structure mapping line ranges to card objects (replaces single-line comment_map)
+  - [x] 2.4 Render file headers with comment count (e.g., "📁 src/main.lua (3 comments)")
+  - [x] 2.5 Iterate through cards and render each with `card_renderer.render_card_with_borders()`
+  - [x] 2.6 Store `card_map` in buffer variable `mrreviewer_card_map` for navigation lookup
+  - [x] 2.7 Update `apply_highlighting()` to handle card-based structure (highlight entire cards, not individual lines)
+  - [x] 2.8 Add special handling for cards with resolved status (dim entire card using dedicated highlight group)
 
 - [ ] 3.0 Implement card-level navigation system (Tab/Shift+Tab, ]f/[f)
   - [ ] 3.1 Create `lua/mrreviewer/ui/comments/card_navigator.lua` module for navigation logic

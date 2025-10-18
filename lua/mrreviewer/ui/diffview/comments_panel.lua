@@ -7,6 +7,7 @@ local config = require('mrreviewer.core.config')
 local logger = require('mrreviewer.core.logger')
 local highlights = require('mrreviewer.ui.highlights')
 local formatting = require('mrreviewer.ui.comments.formatting')
+local card_renderer = require('mrreviewer.ui.comments.card_renderer')
 
 --- Group comments by file, maintaining file tree order
 --- @param comments table List of all comments
@@ -255,8 +256,8 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
     })
     vim.api.nvim_buf_set_option(buf, 'modifiable', false)
 
-    -- Clear comment map
-    pcall(vim.api.nvim_buf_set_var, buf, 'mrreviewer_comment_map', {})
+    -- Clear card map
+    pcall(vim.api.nvim_buf_set_var, buf, 'mrreviewer_card_map', {})
 
     logger.info('comments_panel','Comments panel rendered (empty state)')
     return
@@ -265,9 +266,9 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
   -- Group comments by file
   local grouped = M.group_by_file(filtered_comments, files)
 
-  -- Build content lines
+  -- Build content lines using card-based rendering
   local lines = {}
-  local comment_map = {} -- Map line numbers to comment objects
+  local card_map = {} -- Map line ranges to card objects
   local current_line = 1
 
   -- Iterate through files in display order
@@ -275,16 +276,6 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
     local file_comments = grouped[file_path]
 
     if file_comments and #file_comments > 0 then
-      -- Add file header
-      table.insert(lines, '')
-      current_line = current_line + 1
-
-      table.insert(lines, '📁 ' .. file_path)
-      current_line = current_line + 1
-
-      table.insert(lines, '---')
-      current_line = current_line + 1
-
       -- Sort comments by line number
       table.sort(file_comments, function(a, b)
         local a_line = a.position and (a.position.new_line or a.position.old_line) or 0
@@ -292,14 +283,52 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
         return a_line < b_line
       end)
 
-      -- Add each comment
-      for _, comment in ipairs(file_comments) do
-        local formatted = formatting.format_minimal(comment)
-        table.insert(lines, formatted)
+      -- Convert file comments into cards
+      local file_cards = card_renderer.group_comments_into_cards(file_comments)
 
-        -- Store comment reference for this line
-        comment_map[current_line] = comment
+      -- Sort cards by line number (extracted from first comment)
+      table.sort(file_cards, function(a, b)
+        if not a.comments[1] or not b.comments[1] then
+          return false
+        end
+        local a_line = a.comments[1].position and (a.comments[1].position.new_line or a.comments[1].position.old_line) or 0
+        local b_line = b.comments[1].position and (b.comments[1].position.new_line or b.comments[1].position.old_line) or 0
+        return a_line < b_line
+      end)
+
+      -- Add file header
+      table.insert(lines, '')
+      current_line = current_line + 1
+
+      table.insert(lines, '📁 ' .. file_path .. ' (' .. #file_cards .. ' comments)')
+      current_line = current_line + 1
+
+      table.insert(lines, '---')
+      current_line = current_line + 1
+
+      -- Render each card
+      for _, card in ipairs(file_cards) do
+        -- Get card start line
+        local card_start_line = current_line
+
+        -- Render card with borders
+        local card_lines = card_renderer.render_card_with_borders(card)
+
+        -- Add card lines to buffer
+        for _, card_line in ipairs(card_lines) do
+          table.insert(lines, '  ' .. card_line) -- Indent cards slightly
+          current_line = current_line + 1
+        end
+
+        -- Add spacing between cards
+        table.insert(lines, '')
         current_line = current_line + 1
+
+        -- Store card reference for this line range
+        local card_end_line = current_line - 1
+        for line_num = card_start_line, card_end_line do
+          card_map[line_num] = card
+        end
       end
     end
   end
@@ -317,14 +346,14 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
   vim.api.nvim_buf_set_option(buf, 'number', false)
   vim.api.nvim_buf_set_option(buf, 'relativenumber', false)
 
-  -- Store comment map in buffer variable
-  pcall(vim.api.nvim_buf_set_var, buf, 'mrreviewer_comment_map', comment_map)
+  -- Store card map in buffer variable
+  pcall(vim.api.nvim_buf_set_var, buf, 'mrreviewer_card_map', card_map)
 
   -- Apply syntax highlighting
   M.apply_highlighting(buf, grouped, files)
 
-  -- Apply highlighting for selected comment
-  highlight_selected_comment(buf, diffview.selected_comment, comment_map)
+  -- Apply highlighting for selected comment (TODO: update to use card-based highlighting)
+  -- highlight_selected_comment(buf, diffview.selected_comment, card_map)
 
   -- Setup keymaps
   M.setup_keymaps(buf, on_comment_selected_callback, on_open_thread_callback)
@@ -336,7 +365,7 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
   })
 end
 
---- Apply syntax highlighting to the comments panel
+--- Apply syntax highlighting to the comments panel (card-based)
 --- @param buf number Buffer ID
 --- @param grouped table Grouped comments by file
 --- @param files table List of file paths in display order
@@ -345,6 +374,12 @@ function M.apply_highlighting(buf, grouped, files)
   vim.api.nvim_buf_clear_namespace(buf, ns_id, 0, -1)
 
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+
+  -- Get card map to check for resolved status
+  local ok, card_map = pcall(vim.api.nvim_buf_get_var, buf, 'mrreviewer_card_map')
+  if not ok or not card_map then
+    card_map = {}
+  end
 
   for i, line in ipairs(lines) do
     -- Highlight file headers (lines starting with 📁)
@@ -367,15 +402,22 @@ function M.apply_highlighting(buf, grouped, files)
         0,
         -1
       )
-    -- Highlight comment lines (note: format has leading spaces)
-    elseif line:match('^%s*Line %d+') then
-      -- Get comment from map to check resolved status
-      local ok, comment_map = pcall(vim.api.nvim_buf_get_var, buf, 'mrreviewer_comment_map')
-      if ok and comment_map and comment_map[i] then
-        local comment = comment_map[i]
-        local hl_group = comment.resolved
-          and 'MRReviewerResolvedComment'
-          or 'MRReviewerUnresolvedComment'
+    -- Highlight card lines (lines that are part of a card)
+    else
+      local card = card_map[i]
+      if card then
+        -- Determine highlight group based on resolved status
+        local hl_group
+        if card.resolved then
+          hl_group = 'MRReviewerCardResolved'
+        else
+          -- Check if this is a border line or content line
+          if line:match('^%s*[┌└]') or line:match('^%s*[─]+') then
+            hl_group = 'MRReviewerCardBorder'
+          else
+            hl_group = 'MRReviewerUnresolvedComment'
+          end
+        end
 
         vim.api.nvim_buf_add_highlight(
           buf,
