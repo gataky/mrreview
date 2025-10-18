@@ -293,6 +293,13 @@ function M.setup_keymaps(old_buf, new_buf)
   -- Get MR data for file switching
   local mr_data = session.mr_data
 
+  logger.info('diff_panel', 'Setting up keymaps', {
+    old_buf = old_buf,
+    new_buf = new_buf,
+    comment_count = #comments,
+    has_mr_data = mr_data ~= nil,
+  })
+
   -- Setup keymaps for both buffers
   for _, buf in ipairs({old_buf, new_buf}) do
     local opts = { noremap = true, silent = true, buffer = buf }
@@ -305,8 +312,15 @@ function M.setup_keymaps(old_buf, new_buf)
       local diffview = state.get_diffview()
       local selected_file = diffview.selected_file
 
+      logger.info('diff_panel', 'K pressed', {
+        line = line_number,
+        file = selected_file,
+        comment_count = #comments,
+      })
+
       if not selected_file then
         logger.warn('diff_panel', 'No file selected for comment preview')
+        utils.notify('No file selected', 'warn')
         return
       end
 
@@ -317,7 +331,8 @@ function M.setup_keymaps(old_buf, new_buf)
         logger.info('diff_panel', 'Showing comment preview', { comment_id = comment.id })
         navigation.open_full_comment_thread(comment)
       else
-        logger.debug('diff_panel', 'No comment at line ' .. line_number)
+        logger.info('diff_panel', 'No comment at line ' .. line_number)
+        utils.notify('No comment at line ' .. line_number, 'info')
       end
     end, opts)
 
