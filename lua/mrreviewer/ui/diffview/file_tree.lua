@@ -274,4 +274,35 @@ function M.count_nodes(node)
   return count
 end
 
+--- Flatten tree into visible nodes (depth-first traversal)
+--- Skips children of collapsed directories
+--- @param node Node Root or intermediate node
+--- @param collapsed_state table Map of collapsed directory paths {[path] = true}
+--- @param result table|nil Accumulator for results (optional)
+--- @return table List of visible nodes in display order
+function M.flatten_visible_nodes(node, collapsed_state, result)
+  result = result or {}
+  collapsed_state = collapsed_state or {}
+
+  -- Skip the virtual root node itself (depth = -1)
+  if node.depth >= 0 then
+    table.insert(result, node)
+  end
+
+  -- If this is a collapsed directory, skip its children
+  if node:is_dir() and collapsed_state[node.path] then
+    logger.debug('file_tree', 'Skipping children of collapsed directory', {
+      path = node.path,
+    })
+    return result
+  end
+
+  -- Recursively process children (already sorted)
+  for _, child in ipairs(node.children) do
+    M.flatten_visible_nodes(child, collapsed_state, result)
+  end
+
+  return result
+end
+
 return M

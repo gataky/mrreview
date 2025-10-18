@@ -57,8 +57,8 @@ Generated from: `0003-prd-hierarchical-file-tree.md`
 - [x] 3.7 Update `clear_diffview()` in state.lua to clear collapsed_dirs
 
 ### 4.0 Implement Tree Rendering with Visual Hierarchy
-- [ ] 4.1 Implement `flatten_visible_nodes(tree, collapsed_state)` function
-- [ ] 4.2 Add depth-first traversal that skips children of collapsed directories
+- [x] 4.1 Implement `flatten_visible_nodes(tree, collapsed_state)` function
+- [x] 4.2 Add depth-first traversal that skips children of collapsed directories
 - [ ] 4.3 Update `render()` function in `file_panel.lua` to use tree rendering
 - [ ] 4.4 Implement indentation based on node depth (configurable spaces)
 - [ ] 4.5 Add visual indicators: ▾ (expanded), ▸ (collapsed), • (file)
