@@ -11,6 +11,107 @@ local highlights = require('mrreviewer.ui.highlights')
 -- Import fetch_file_versions from existing diff view module
 local view = require('mrreviewer.ui.diff.view')
 
+--- Place comment range signs in diff buffers
+--- @param file_path string Current file path
+--- @param old_buf number Old diff buffer ID
+--- @param new_buf number New diff buffer ID
+local function place_comment_range_signs(file_path, old_buf, new_buf)
+  local comments_state = state.get_comments()
+  local comments = comments_state.list or {}
+
+  logger.info('diff_panel', 'place_comment_range_signs called', {
+    file_path = file_path,
+    comment_count = #comments,
+    old_buf = old_buf,
+    new_buf = new_buf,
+  })
+
+  -- Unplace existing comment signs
+  vim.fn.sign_unplace('MRReviewerCommentRange', { buffer = old_buf })
+  vim.fn.sign_unplace('MRReviewerCommentRange', { buffer = new_buf })
+
+  -- Group comments by their line range
+  local comment_ranges = {}
+  for _, comment in ipairs(comments) do
+    if comment.position and comment.position.new_path == file_path then
+      local start_line = comment.position.new_line
+      local end_line = comment.position.new_line_end or start_line
+      logger.info('diff_panel', 'Found comment for file', {
+        comment_id = comment.id,
+        start_line = start_line,
+        end_line = end_line,
+        new_line_end_raw = comment.position.new_line_end,
+        is_multiline = start_line ~= end_line,
+      })
+      if start_line then
+        table.insert(comment_ranges, {
+          start_line = start_line,
+          end_line = end_line,
+          comment = comment,
+        })
+      end
+    end
+  end
+
+  logger.info('diff_panel', 'Found comment ranges', {
+    range_count = #comment_ranges,
+  })
+
+  -- Sort ranges by start line
+  table.sort(comment_ranges, function(a, b)
+    return a.start_line < b.start_line
+  end)
+
+  -- Place signs for each range
+  for _, range in ipairs(comment_ranges) do
+    local buf = new_buf -- Place in new buffer (right side)
+
+    if range.start_line == range.end_line then
+      -- Single line comment - use regular comment sign
+      local sign_name = range.comment.resolved and 'MRReviewerCommentResolved' or 'MRReviewerComment'
+      logger.debug('diff_panel', 'Placing single-line sign', {
+        sign_name = sign_name,
+        line = range.start_line,
+        buf = buf,
+      })
+      vim.fn.sign_place(0, 'MRReviewerCommentRange', sign_name, buf, {
+        lnum = range.start_line,
+        priority = 15, -- Higher than diff signs but lower than selection
+      })
+    else
+      -- Multi-line comment - use bracket signs
+      logger.info('diff_panel', 'Placing multi-line bracket signs', {
+        start_line = range.start_line,
+        end_line = range.end_line,
+        comment_id = range.comment.id,
+        buf = buf,
+      })
+
+      -- Top bracket
+      vim.fn.sign_place(0, 'MRReviewerCommentRange', 'MRReviewerCommentRangeTop', buf, {
+        lnum = range.start_line,
+        priority = 15,
+      })
+
+      -- Middle brackets
+      for line = range.start_line + 1, range.end_line - 1 do
+        vim.fn.sign_place(0, 'MRReviewerCommentRange', 'MRReviewerCommentRangeMiddle', buf, {
+          lnum = line,
+          priority = 15,
+        })
+      end
+
+      -- Bottom bracket
+      vim.fn.sign_place(0, 'MRReviewerCommentRange', 'MRReviewerCommentRangeBottom', buf, {
+        lnum = range.end_line,
+        priority = 15,
+      })
+    end
+  end
+
+  logger.info('diff_panel', 'Finished placing comment range signs')
+end
+
 --- Highlight a specific line in the diff buffers
 --- @param line_number number Line number to highlight (1-indexed)
 --- @param duration number|nil Duration in milliseconds (nil/0 for permanent)
@@ -160,6 +261,9 @@ function M.update_file(mr_data, file_path)
   logger.info('diff_panel','Successfully updated diff view for: ' .. file_path)
   utils.notify('Loaded diff for ' .. file_path, 'info')
 
+  -- Place comment range signs
+  place_comment_range_signs(file_path, old_buf, new_buf)
+
   -- Setup keymaps for diff buffers (re-setup after update)
   M.setup_keymaps(old_buf, new_buf)
 
@@ -268,6 +372,9 @@ function M.render(mr_data, file_path)
 
   logger.info('diff_panel','Successfully rendered side-by-side diff for: ' .. file_path)
 
+  -- Place comment range signs
+  place_comment_range_signs(file_path, old_buf, new_buf)
+
   -- Setup keymaps for diff buffers
   M.setup_keymaps(old_buf, new_buf)
 
@@ -281,16 +388,11 @@ function M.setup_keymaps(old_buf, new_buf)
   local navigation = require('mrreviewer.ui.diffview.navigation')
 
   -- Get comments from state
-  local session = state.get_session()
-  local comments = {}
-  if session.mr_iid and session.project_id then
-    local comments_state = state.get_comments()
-    if comments_state.list then
-      comments = comments_state.list
-    end
-  end
+  local comments_state = state.get_comments()
+  local comments = comments_state.list or {}
 
   -- Get MR data for file switching
+  local session = state.get_session()
   local mr_data = session.mr_data
 
   logger.info('diff_panel', 'Setting up keymaps', {
@@ -298,6 +400,7 @@ function M.setup_keymaps(old_buf, new_buf)
     new_buf = new_buf,
     comment_count = #comments,
     has_mr_data = mr_data ~= nil,
+    comments_sample = comments[1] and vim.inspect(comments[1]) or 'none',
   })
 
   -- Setup keymaps for both buffers
@@ -316,6 +419,8 @@ function M.setup_keymaps(old_buf, new_buf)
         line = line_number,
         file = selected_file,
         comment_count = #comments,
+        first_comment_file = comments[1] and comments[1].position and comments[1].position.new_path or 'none',
+        first_comment_line = comments[1] and comments[1].position and comments[1].position.new_line or 'none',
       })
 
       if not selected_file then
@@ -369,8 +474,10 @@ function M.setup_keymaps(old_buf, new_buf)
 
       if comment then
         logger.info('diff_panel', 'Opening comment thread', { comment_id = comment.id })
-        -- Open and the floating window will automatically be focused
-        navigation.open_full_comment_thread(comment)
+        -- Open and focus the floating window
+        vim.schedule(function()
+          navigation.open_full_comment_thread(comment, true)
+        end)
       else
         logger.debug('diff_panel', 'No comment at line ' .. line_number)
       end

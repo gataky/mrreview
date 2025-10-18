@@ -159,6 +159,148 @@ function M.display_float(comments, buffer)
   -- No need to show anything initially - float will appear on demand
 end
 
+--- Show floating window for a specific comment
+--- @param comment table Comment object to display
+--- @param focus boolean|nil Whether to focus the floating window (default: false)
+--- @return boolean Success status
+function M.show_float(comment, focus)
+  if not comment then
+    return false
+  end
+
+  -- Close any existing float
+  local comments_state = state_module.get_comments()
+  if comments_state.comment_float_win and vim.api.nvim_win_is_valid(comments_state.comment_float_win) then
+    vim.api.nvim_win_close(comments_state.comment_float_win, true)
+    comments_state.comment_float_win = nil
+    comments_state.comment_float_buf = nil
+  end
+
+  -- Find all comments in the same thread (by discussion_id)
+  local thread_comments = { comment }
+  if comment.discussion_id then
+    local all_comments = comments_state.list or {}
+    for _, c in ipairs(all_comments) do
+      if c.discussion_id == comment.discussion_id and c.id ~= comment.id then
+        table.insert(thread_comments, c)
+      end
+    end
+    -- Sort by created_at timestamp
+    table.sort(thread_comments, function(a, b)
+      return a.created_at < b.created_at
+    end)
+  end
+
+  -- Format comment thread for display
+  local lines = {}
+
+  for i, thread_comment in ipairs(thread_comments) do
+    if i > 1 then
+      -- Separator between comments in thread
+      table.insert(lines, '')
+      table.insert(lines, string.rep('─', 60))
+      table.insert(lines, '')
+    end
+
+    local resolved_marker = thread_comment.resolved and '✓ ' or '• '
+    local resolved_text = thread_comment.resolved and '(resolved)' or '(unresolved)'
+
+    table.insert(lines, resolved_marker .. thread_comment.author.name .. ' ' .. resolved_text)
+
+    if thread_comment.created_at then
+      local date = thread_comment.created_at:match('(%d%d%d%d%-%d%d%-%d%d)')
+      if date then
+        table.insert(lines, date)
+      end
+    end
+
+    table.insert(lines, '')
+
+    -- Add comment body (split by newlines)
+    for line in thread_comment.body:gmatch('[^\r\n]+') do
+      table.insert(lines, line)
+    end
+  end
+
+  -- Create floating window
+  local width = 80
+  local height = math.min(#lines, 20)
+
+  local opts = {
+    relative = 'cursor',
+    row = 1,
+    col = 0,
+    width = width,
+    height = height,
+    style = 'minimal',
+    border = 'rounded',
+    focusable = true,
+    zindex = 50,
+  }
+
+  -- Get the source buffer (before creating the float)
+  local source_buffer = vim.api.nvim_get_current_buf()
+
+  -- Create buffer for float
+  local float_buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(float_buf, 0, -1, false, lines)
+  vim.bo[float_buf].modifiable = false
+  vim.bo[float_buf].filetype = 'markdown'
+
+  -- Open floating window (focus based on parameter, default false)
+  local float_win = vim.api.nvim_open_win(float_buf, focus == true, opts)
+
+  -- Ensure the window isn't in diff mode (diff is window-local, not buffer-local)
+  vim.wo[float_win].diff = false
+
+  -- Store float window
+  comments_state.comment_float_win = float_win
+  comments_state.comment_float_buf = float_buf
+
+  -- Set window options
+  vim.wo[float_win].wrap = true
+  vim.wo[float_win].linebreak = true
+  vim.wo[float_win].cursorbind = false
+  vim.wo[float_win].scrollbind = false
+
+  -- Close float function
+  local close_float = function()
+    local comments_state = state_module.get_comments()
+    if comments_state.comment_float_win and vim.api.nvim_win_is_valid(comments_state.comment_float_win) then
+      vim.api.nvim_win_close(comments_state.comment_float_win, true)
+      comments_state.comment_float_win = nil
+      comments_state.comment_float_buf = nil
+    end
+  end
+
+  -- Set up autocommands to close the float
+  local float_augroup = vim.api.nvim_create_augroup('MRReviewerFloat', { clear = true })
+
+  -- Only set up auto-close on cursor movement if we're not focusing the window
+  -- (if focused, user can manually close with q or Esc)
+  if not focus then
+    -- Close when cursor moves in the main buffer
+    vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
+      group = float_augroup,
+      buffer = source_buffer,
+      callback = close_float,
+    })
+  else
+    -- If focused, close when leaving the float window
+    vim.api.nvim_create_autocmd('BufLeave', {
+      group = float_augroup,
+      buffer = float_buf,
+      callback = close_float,
+    })
+  end
+
+  -- Close when pressing q or Escape in the float
+  vim.keymap.set('n', 'q', close_float, { buffer = float_buf, noremap = true, silent = true })
+  vim.keymap.set('n', '<Esc>', close_float, { buffer = float_buf, noremap = true, silent = true })
+
+  return true
+end
+
 --- Show floating window for comment on current line
 function M.show_float_for_current_line()
   local buffer = vim.api.nvim_get_current_buf()

@@ -173,8 +173,9 @@ end
 
 --- Open full comment thread in floating window
 --- @param comment table Comment object
+--- @param focus boolean|nil Whether to focus the floating window (default: false)
 --- @return boolean Success status
-function M.open_full_comment_thread(comment)
+function M.open_full_comment_thread(comment, focus)
   if not comment then
     logger.error('navigation','No comment provided to open_full_comment_thread')
     return false
@@ -196,7 +197,7 @@ function M.open_full_comment_thread(comment)
   end
 
   -- Show the comment thread in a floating window
-  local success = comments_module.show_float(comment)
+  local success = comments_module.show_float(comment, focus)
 
   if success then
     logger.info('navigation','Successfully opened comment thread')

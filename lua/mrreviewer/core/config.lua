@@ -54,6 +54,9 @@ local defaults = {
     path = 'glab',
     -- Timeout for glab commands in milliseconds
     timeout = 30000,
+    -- Enable mock mode to avoid making real API calls
+    -- When enabled, returns predefined mock responses instead of calling glab
+    mock_mode = false,
   },
 
   -- Notification settings

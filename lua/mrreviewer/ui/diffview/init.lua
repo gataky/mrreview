@@ -102,6 +102,9 @@ function M.open(mr_data)
       comment_count = #comments,
     })
 
+    -- Store comments in state for access by keymaps
+    state.get_comments().list = comments
+
     -- Create three-pane layout
     if not layout.create_layout(mr_data) then
       error('Failed to create diffview layout')

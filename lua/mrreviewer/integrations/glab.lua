@@ -14,6 +14,18 @@ local logger = require('mrreviewer.core.logger')
 --- @param cwd string|nil Working directory (defaults to git repo root)
 function M.execute_async(args, callback, timeout, cwd)
   local config = require('mrreviewer.core.config')
+
+  -- Check if mock mode is enabled
+  if config.get_value('glab.mock_mode') then
+    local mock_data = require('mrreviewer.integrations.mock_data')
+    local exit_code, stdout, stderr = mock_data.get_mock_response(args)
+    logger.info('glab', 'Returning mock response for: ' .. table.concat(args, ' '))
+    vim.schedule(function()
+      callback(exit_code, stdout, stderr)
+    end)
+    return
+  end
+
   local glab_path = config.get_value('glab.path') or 'glab'
   timeout = timeout or config.get_value('glab.timeout') or 30000
 
@@ -71,6 +83,25 @@ end
 --- @return number|nil, string|nil, string|nil, table|nil exit_code, stdout, stderr, error object
 function M.execute_sync(args, timeout, cwd)
   local config = require('mrreviewer.core.config')
+
+  -- Check if mock mode is enabled
+  if config.get_value('glab.mock_mode') then
+    local mock_data = require('mrreviewer.integrations.mock_data')
+    local exit_code, stdout, stderr = mock_data.get_mock_response(args)
+    logger.info('glab', 'Returning mock response for: ' .. table.concat(args, ' '))
+
+    if exit_code ~= 0 then
+      local err = errors.network_error('glab mock command failed', {
+        command = table.concat(args, ' '),
+        exit_code = exit_code,
+        stderr = stderr,
+      })
+      return exit_code, stdout, stderr, err
+    end
+
+    return exit_code, stdout, stderr, nil
+  end
+
   local glab_path = config.get_value('glab.path') or 'glab'
   timeout = timeout or config.get_value('glab.timeout') or 30000
 

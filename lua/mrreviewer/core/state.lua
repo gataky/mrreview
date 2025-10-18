@@ -24,6 +24,7 @@ M._state = {
 
   -- Comment display state (from comments/init.lua)
   comments = {
+    list = {}, -- Full list of comments from MR
     displayed_comments = {},
     comment_buffer = nil,
     comment_window = nil,
@@ -181,6 +182,7 @@ end
 
 --- Clear all comments state
 function M.clear_comments()
+  M._state.comments.list = {}
   M._state.comments.displayed_comments = {}
   M._state.comments.comment_buffer = nil
   M._state.comments.comment_window = nil
@@ -266,6 +268,10 @@ function M.validate(state)
   end
 
   -- Validate comments fields
+  if type(state.comments.list) ~= 'table' then
+    return false, errors.validation_error('state.comments.list must be a table')
+  end
+
   if type(state.comments.displayed_comments) ~= 'table' then
     return false, errors.validation_error('state.comments.displayed_comments must be a table')
   end
@@ -371,6 +377,7 @@ function M.reset()
       files = {},
     },
     comments = {
+      list = {},
       displayed_comments = {},
       comment_buffer = nil,
       comment_window = nil,

@@ -129,6 +129,22 @@ function M.define_signs()
     texthl = 'MRReviewerSignCommentResolved',
   })
 
+  -- Comment range bracket signs (for multi-line comments)
+  vim.fn.sign_define('MRReviewerCommentRangeTop', {
+    text = '┌',
+    texthl = 'MRReviewerSignComment',
+  })
+
+  vim.fn.sign_define('MRReviewerCommentRangeMiddle', {
+    text = '│',
+    texthl = 'MRReviewerSignComment',
+  })
+
+  vim.fn.sign_define('MRReviewerCommentRangeBottom', {
+    text = '└',
+    texthl = 'MRReviewerSignComment',
+  })
+
   -- Diff signs
   vim.fn.sign_define('MRReviewerDiffAdd', {
     text = '+',

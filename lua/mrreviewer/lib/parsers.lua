@@ -87,7 +87,9 @@ local function parse_position(position)
     new_path = position.new_path,
     old_path = position.old_path,
     new_line = position.new_line,
+    new_line_end = position.new_line_end,
     old_line = position.old_line,
+    old_line_end = position.old_line_end,
     position_type = position.position_type or 'text',
   }
 
@@ -146,6 +148,7 @@ function M.parse_comments(json_str)
         system = note.system or false,
         resolvable = note.resolvable or false,
         resolved = note.resolved or false,
+        discussion_id = note.discussion_id,
         position = parse_position(note.position),
       }
 

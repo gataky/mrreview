@@ -101,6 +101,14 @@ function M.fetch_file_versions(file_path, ref)
     return nil
   end
 
+  -- Check if mock mode is enabled
+  local config = require('mrreviewer.core.config')
+  if config.get_value('glab.mock_mode') then
+    local mock_data = require('mrreviewer.integrations.mock_data')
+    local content = mock_data.get_mock_file_content(file_path, ref)
+    return content or {}
+  end
+
   -- Get repo root for running git commands
   local project = require('mrreviewer.integrations.project')
   local repo_root = project.get_repo_root()
