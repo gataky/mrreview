@@ -17,8 +17,8 @@ function M.create_three_pane_windows()
   local total_width = vim.o.columns
 
   -- Calculate widths: 20% | 60% | 20%
-  local files_width = math.floor(total_width * 0.2)
-  local diff_width = math.floor(total_width * 0.6)
+  local files_width = math.floor(total_width * 0.1)
+  local diff_width = math.floor(total_width * 0.8)
   local comments_width = total_width - files_width - diff_width -- Ensure we use all available space
 
   logger.debug('layout','Creating three-pane layout', {

@@ -312,6 +312,9 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   vim.api.nvim_buf_set_option(buf, 'modifiable', false)
 
+  -- Disable signcolumn for cleaner look
+  vim.api.nvim_buf_set_option(buf, 'signcolumn', 'no')
+
   -- Store comment map in buffer variable
   pcall(vim.api.nvim_buf_set_var, buf, 'mrreviewer_comment_map', comment_map)
 

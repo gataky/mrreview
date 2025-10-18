@@ -229,6 +229,35 @@ function M.setup_keymaps(buf, on_file_selected_callback)
   logger.debug('file_panel','File panel keymaps set up for buffer ' .. buf)
 end
 
+--- Set up status column with comment indicators for files
+--- @param buf number Buffer ID
+--- @param visible_nodes table List of visible nodes
+local function setup_status_column(buf, visible_nodes)
+  -- Enable signcolumn for comment indicators
+  vim.api.nvim_buf_set_option(buf, 'signcolumn', 'yes:1')
+
+  -- Clear existing signs
+  vim.fn.sign_unplace('mrreviewer_file_tree', { buffer = buf })
+
+  -- Place signs for files with comments
+  for line_idx, node in ipairs(visible_nodes) do
+    if node:is_file() and node.comment_count and node.comment_count.total > 0 then
+      -- Use different sign based on whether all comments are resolved
+      local sign_name = (node.comment_count.resolved == node.comment_count.total)
+        and 'MRReviewerCommentResolved'
+        or 'MRReviewerComment'
+
+      vim.fn.sign_place(
+        0, -- auto-assign ID
+        'mrreviewer_file_tree', -- group
+        sign_name,
+        buf,
+        { lnum = line_idx, priority = 10 }
+      )
+    end
+  end
+end
+
 --- Apply syntax highlighting to tree elements (icons, names, indentation)
 --- @param buf number Buffer ID
 --- @param visible_nodes table List of visible nodes
@@ -295,22 +324,6 @@ local function apply_tree_highlights(buf, visible_nodes, indent_size)
       byte_offset,
       byte_offset + name_bytes
     )
-    byte_offset = byte_offset + name_bytes
-
-    -- Highlight comment count if present
-    if node:is_file() and node.comment_count and node.comment_count.total > 0 then
-      -- Skip the "  " before the comment icon
-      byte_offset = byte_offset + 2
-      -- Highlight the entire comment count display
-      vim.api.nvim_buf_add_highlight(
-        buf,
-        ns_id,
-        highlights.get_group('comment_count'),
-        line_num,
-        byte_offset,
-        -1 -- to end of line
-      )
-    end
 
     ::continue::
   end
@@ -438,13 +451,8 @@ function M.render(files, comments, buf, on_file_selected_callback)
       icon = file_icon
     end
 
-    -- Build line with indentation, icon, and name
+    -- Build line with indentation, icon, and name (no comment count inline)
     local line = indent .. icon .. ' ' .. node.name
-
-    -- Add comment count for files (task 4.6)
-    if node:is_file() and node.comment_count and node.comment_count.total > 0 then
-      line = line .. string.format('  💬 %d/%d', node.comment_count.resolved, node.comment_count.total)
-    end
 
     table.insert(lines, line)
 
@@ -453,6 +461,7 @@ function M.render(files, comments, buf, on_file_selected_callback)
       path = node.path,
       kind = node.kind,
       depth = node.depth,
+      comment_count = node.comment_count,
     })
   end
 
@@ -463,6 +472,9 @@ function M.render(files, comments, buf, on_file_selected_callback)
 
   -- Store node metadata in buffer variable (task 4.8)
   vim.api.nvim_buf_set_var(buf, 'mrreviewer_file_tree_nodes', node_metadata)
+
+  -- Set up status column with comment indicators
+  setup_status_column(buf, visible_nodes)
 
   -- Apply syntax highlighting to tree elements
   apply_tree_highlights(buf, visible_nodes, indent_size)
