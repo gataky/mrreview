@@ -87,6 +87,20 @@ local defaults = {
     default_focus = 'files',
     -- Show resolved comments by default in the comments panel
     show_resolved = true,
+
+    -- File tree settings (hierarchical file display) (task 6.1)
+    file_tree = {
+      -- Number of spaces per indentation level (task 6.2)
+      indent = 2,
+      -- Enable directory collapse/expand functionality (task 6.3)
+      collapse_dirs = true,
+      -- Icon for collapsed directories (task 6.4)
+      dir_collapsed_icon = '▸',
+      -- Icon for expanded directories (task 6.5)
+      dir_expanded_icon = '▾',
+      -- Icon for files (task 6.6)
+      file_icon = '•',
+    },
   },
 }
 

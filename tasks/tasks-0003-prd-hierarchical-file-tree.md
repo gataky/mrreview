@@ -76,15 +76,15 @@ Generated from: `0003-prd-hierarchical-file-tree.md`
 - [x] 5.7 Implement re-render after directory toggle
 - [x] 5.8 Preserve cursor position after re-render
 
-### 6.0 Add Configuration Options
-- [ ] 6.1 Add `diffview.file_tree` section to `core/config.lua` defaults
-- [ ] 6.2 Add `indent` config option (default: 2 spaces)
-- [ ] 6.3 Add `collapse_dirs` config option (default: true)
-- [ ] 6.4 Add `dir_collapsed_icon` config option (default: "▸")
-- [ ] 6.5 Add `dir_expanded_icon` config option (default: "▾")
-- [ ] 6.6 Add `file_icon` config option (default: "•")
-- [ ] 6.7 Update rendering logic to use config values for icons and indentation
-- [ ] 6.8 Add configuration validation in setup
+### 6.0 Add Configuration Options ✓
+- [x] 6.1 Add `diffview.file_tree` section to `core/config.lua` defaults
+- [x] 6.2 Add `indent` config option (default: 2 spaces)
+- [x] 6.3 Add `collapse_dirs` config option (default: true)
+- [x] 6.4 Add `dir_collapsed_icon` config option (default: "▸")
+- [x] 6.5 Add `dir_expanded_icon` config option (default: "▾")
+- [x] 6.6 Add `file_icon` config option (default: "•")
+- [x] 6.7 Update rendering logic to use config values for icons and indentation
+- [x] 6.8 Add configuration validation in setup
 
 ### 7.0 Add Tests and Documentation
 - [ ] 7.1 Create `tests/ui/diffview/file_tree_spec.lua` for Node and tree building tests
