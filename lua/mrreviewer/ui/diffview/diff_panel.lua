@@ -265,7 +265,86 @@ function M.render(mr_data, file_path)
 
   logger.info('diff_panel','Successfully rendered side-by-side diff for: ' .. file_path)
 
+  -- Setup keymaps for diff buffers
+  M.setup_keymaps(old_buf, new_buf)
+
   return true
+end
+
+--- Setup keymaps for diff buffers
+--- @param old_buf number Old diff buffer ID
+--- @param new_buf number New diff buffer ID
+function M.setup_keymaps(old_buf, new_buf)
+  local navigation = require('mrreviewer.ui.diffview.navigation')
+
+  -- Get comments from state
+  local session = state.get_session()
+  local comments = {}
+  if session.mr_iid and session.project_id then
+    local comments_state = state.get_comments()
+    if comments_state.list then
+      comments = comments_state.list
+    end
+  end
+
+  -- Get MR data for file switching
+  local mr_data = session.mr_data
+
+  -- Setup keymaps for both buffers
+  for _, buf in ipairs({old_buf, new_buf}) do
+    local opts = { noremap = true, silent = true, buffer = buf }
+
+    -- K to preview comment at cursor
+    vim.keymap.set('n', 'K', function()
+      local cursor = vim.api.nvim_win_get_cursor(0)
+      local line_number = cursor[1]
+
+      local diffview = state.get_diffview()
+      local selected_file = diffview.selected_file
+
+      if not selected_file then
+        logger.warn('diff_panel', 'No file selected for comment preview')
+        return
+      end
+
+      -- Find comment at current line
+      local comment = navigation.find_comment_at_line(selected_file, line_number, comments)
+
+      if comment then
+        logger.info('diff_panel', 'Showing comment preview', { comment_id = comment.id })
+        navigation.open_full_comment_thread(comment)
+      else
+        logger.debug('diff_panel', 'No comment at line ' .. line_number)
+      end
+    end, opts)
+
+    -- KK to open comment and focus into floating window
+    vim.keymap.set('n', 'KK', function()
+      local cursor = vim.api.nvim_win_get_cursor(0)
+      local line_number = cursor[1]
+
+      local diffview = state.get_diffview()
+      local selected_file = diffview.selected_file
+
+      if not selected_file then
+        logger.warn('diff_panel', 'No file selected for comment thread')
+        return
+      end
+
+      -- Find comment at current line
+      local comment = navigation.find_comment_at_line(selected_file, line_number, comments)
+
+      if comment then
+        logger.info('diff_panel', 'Opening comment thread', { comment_id = comment.id })
+        -- Open and the floating window will automatically be focused
+        navigation.open_full_comment_thread(comment)
+      else
+        logger.debug('diff_panel', 'No comment at line ' .. line_number)
+      end
+    end, opts)
+  end
+
+  logger.debug('diff_panel', 'Setup keymaps for diff buffers')
 end
 
 return M

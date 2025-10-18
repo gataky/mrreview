@@ -390,4 +390,67 @@ function M.apply_highlighting(buf, grouped, files)
   end
 end
 
+--- Scroll to the comment section for a specific file in the comments panel
+--- @param file_path string The file path to scroll to
+--- @return boolean Success status
+function M.scroll_to_file(file_path)
+  if not file_path then
+    logger.warn('comments_panel', 'No file path provided to scroll_to_file')
+    return false
+  end
+
+  local diffview = state.get_diffview()
+  local panel_buffers = diffview.panel_buffers
+  local panel_windows = diffview.panel_windows
+
+  if not panel_buffers or not panel_buffers.comments then
+    logger.warn('comments_panel', 'Comments panel buffer not available')
+    return false
+  end
+
+  if not panel_windows or not panel_windows.comments then
+    logger.warn('comments_panel', 'Comments panel window not available')
+    return false
+  end
+
+  local buf = panel_buffers.comments
+  local win = panel_windows.comments
+
+  if not vim.api.nvim_buf_is_valid(buf) or not vim.api.nvim_win_is_valid(win) then
+    logger.warn('comments_panel', 'Comments panel buffer or window is invalid')
+    return false
+  end
+
+  -- Get all lines in the buffer
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+
+  -- Find the line with the file header (starts with "📁 " followed by file path)
+  local target_line = nil
+  for i, line in ipairs(lines) do
+    if line:match('^📁%s+' .. vim.pesc(file_path) .. '$') then
+      target_line = i
+      break
+    end
+  end
+
+  if not target_line then
+    logger.debug('comments_panel', 'File section not found in comments panel', { file = file_path })
+    return false
+  end
+
+  -- Scroll to the file header line and move cursor there
+  vim.api.nvim_win_set_cursor(win, { target_line, 0 })
+
+  -- Center the line in the window
+  vim.api.nvim_set_current_win(win)
+  vim.cmd('normal! zz')
+
+  logger.info('comments_panel', 'Scrolled to file section', {
+    file = file_path,
+    line = target_line,
+  })
+
+  return true
+end
+
 return M

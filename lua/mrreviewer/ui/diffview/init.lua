@@ -117,6 +117,11 @@ function M.open(mr_data)
       logger.info('diffview', 'File selected in file panel: ' .. file_path)
       diff_panel.update_file(mr_data, file_path)
 
+      -- Scroll comments panel to the file section
+      vim.schedule(function()
+        comments_panel.scroll_to_file(file_path)
+      end)
+
       -- Re-render comments panel to update highlighting
       comments_panel.render(
         comments,
