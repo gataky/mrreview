@@ -86,11 +86,11 @@ end
 --- @param on_file_selected_callback function|nil Optional callback to trigger diff update
 function M.on_file_selected(file_path, on_file_selected_callback)
   if not file_path or file_path == '' then
-    logger.log_warn('No file path provided to on_file_selected')
+    logger.warn('file_panel','No file path provided to on_file_selected')
     return
   end
 
-  logger.log_debug('File selected: ' .. file_path)
+  logger.debug('file_panel','File selected: ' .. file_path)
 
   -- Update state
   local diffview = state.get_diffview()
@@ -122,7 +122,7 @@ function M.setup_keymaps(buf, on_file_selected_callback)
     end
   end, opts)
 
-  logger.log_debug('File panel keymaps set up for buffer ' .. buf)
+  logger.debug('file_panel','File panel keymaps set up for buffer ' .. buf)
 end
 
 --- Apply highlighting to the currently selected file
@@ -163,7 +163,7 @@ end
 --- @param on_file_selected_callback function|nil Optional callback when file is selected
 function M.render(files, comments, buf, on_file_selected_callback)
   if not files or #files == 0 then
-    logger.log_warn('No files provided to file_panel.render')
+    logger.warn('file_panel','No files provided to file_panel.render')
     return
   end
 
@@ -174,7 +174,7 @@ function M.render(files, comments, buf, on_file_selected_callback)
   end
 
   if not buf or not vim.api.nvim_buf_is_valid(buf) then
-    logger.log_error('Invalid buffer for file panel')
+    logger.error('file_panel','Invalid buffer for file panel')
     return
   end
 
@@ -210,7 +210,7 @@ function M.render(files, comments, buf, on_file_selected_callback)
   -- Setup keymaps
   M.setup_keymaps(buf, on_file_selected_callback)
 
-  logger.log_info('File panel rendered with ' .. #sorted_files .. ' files')
+  logger.info('file_panel','File panel rendered with ' .. #sorted_files .. ' files')
 end
 
 return M

@@ -80,7 +80,7 @@ end
 function M.open(mr_data)
   -- Show loading notification
   utils.notify('Opening diffview...', 'info')
-  logger.log_info('Opening diffview for MR')
+  logger.info('diffview', 'Opening diffview for MR')
 
   -- Wrap in error handler
   local success, result = errors.try(function()
@@ -97,7 +97,7 @@ function M.open(mr_data)
     end
 
     local comments = get_comments(mr_data)
-    logger.log_info('Found files and comments', {
+    logger.info('diffview', 'Found files and comments', {
       file_count = #files,
       comment_count = #comments,
     })
@@ -114,7 +114,7 @@ function M.open(mr_data)
 
     -- Set up file selection callback
     local function on_file_selected(file_path)
-      logger.log_info('File selected in file panel: ' .. file_path)
+      logger.info('diffview', 'File selected in file panel: ' .. file_path)
       diff_panel.update_file(mr_data, file_path)
 
       -- Re-render comments panel to update highlighting
@@ -140,7 +140,7 @@ function M.open(mr_data)
       diffview.selected_file = first_file
 
       if not diff_panel.render(mr_data, first_file) then
-        logger.log_warn('Failed to render initial diff for: ' .. first_file)
+        logger.warn('diffview', 'Failed to render initial diff for: ' .. first_file)
       end
     end
 
@@ -160,7 +160,7 @@ function M.open(mr_data)
     -- Set up navigation (cursor tracking)
     navigation.setup_diff_cursor_moved(comments, mr_data)
 
-    logger.log_info('Diffview opened successfully')
+    logger.info('diffview', 'Diffview opened successfully')
     utils.notify('Diffview ready', 'info')
 
     return true
@@ -168,7 +168,7 @@ function M.open(mr_data)
 
   if not success then
     local error_msg = result or 'Unknown error'
-    logger.log_error('Failed to open diffview: ' .. error_msg)
+    logger.error('diffview', 'Failed to open diffview: ' .. error_msg)
     utils.notify('Failed to open diffview: ' .. error_msg, 'error')
 
     -- Clean up any partial state
@@ -183,7 +183,7 @@ end
 --- Close diffview and clean up resources
 --- @return boolean Success status
 function M.close()
-  logger.log_info('Closing diffview')
+  logger.info('diffview', 'Closing diffview')
 
   local success, result = errors.try(function()
     -- Clean up navigation autocmds
@@ -195,13 +195,13 @@ function M.close()
     -- Clear diffview state (includes timer cleanup)
     state.clear_diffview()
 
-    logger.log_info('Diffview closed successfully')
+    logger.info('diffview', 'Diffview closed successfully')
     return true
   end)
 
   if not success then
     local error_msg = result or 'Unknown error'
-    logger.log_error('Error while closing diffview: ' .. error_msg)
+    logger.error('diffview', 'Error while closing diffview: ' .. error_msg)
 
     -- Try to force cleanup even if error occurred
     pcall(navigation.cleanup)
@@ -243,11 +243,11 @@ end
 --- @return boolean Success status
 function M.refresh(mr_data)
   if not M.is_open() then
-    logger.log_warn('Cannot refresh diffview: not currently open')
+    logger.warn('diffview', 'Cannot refresh diffview: not currently open')
     return false
   end
 
-  logger.log_info('Refreshing diffview')
+  logger.info('diffview', 'Refreshing diffview')
 
   -- Save current state
   local diffview = state.get_diffview()
@@ -265,7 +265,7 @@ function M.refresh(mr_data)
 
     local ok, _ = pcall(diff_panel.update_file, mr_data, current_file)
     if not ok then
-      logger.log_warn('Could not restore previous file selection')
+      logger.warn('diffview', 'Could not restore previous file selection')
     end
   end
 

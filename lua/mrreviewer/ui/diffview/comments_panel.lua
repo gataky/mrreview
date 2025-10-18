@@ -40,7 +40,7 @@ function M.group_by_file(comments, files)
     end
   end
 
-  logger.log_debug('Grouped comments by file', {
+  logger.debug('comments_panel','Grouped comments by file', {
     total_comments = #comments,
     files_with_comments = vim.tbl_count(grouped),
   })
@@ -112,7 +112,7 @@ function M.setup_keymaps(buf, on_comment_selected_callback, on_open_thread_callb
     M.toggle_resolved_filter()
   end, vim.tbl_extend('force', opts, { desc = 'Toggle resolved comments filter' }))
 
-  logger.log_debug('Comments panel keymaps set up for buffer ' .. buf)
+  logger.debug('comments_panel','Comments panel keymaps set up for buffer ' .. buf)
 end
 
 --- Toggle the resolved comments filter
@@ -125,7 +125,7 @@ function M.toggle_resolved_filter()
   diffview.filter_resolved = not current
 
   local filter_state = diffview.filter_resolved and 'hiding' or 'showing'
-  logger.log_info('Toggled resolved filter: now ' .. filter_state .. ' resolved comments')
+  logger.info('comments_panel','Toggled resolved filter: now ' .. filter_state .. ' resolved comments')
 
   -- Trigger re-render
   -- This will be called from the render function which has access to all data
@@ -149,7 +149,7 @@ function M.filter_by_status(comments, show_resolved)
     end
   end
 
-  logger.log_debug('Filtered comments', {
+  logger.debug('comments_panel','Filtered comments', {
     total = #comments,
     filtered = #filtered,
     show_resolved = show_resolved,
@@ -202,7 +202,7 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
   end
 
   if not buf or not vim.api.nvim_buf_is_valid(buf) then
-    logger.log_error('Invalid buffer for comments panel')
+    logger.error('comments_panel','Invalid buffer for comments panel')
     return
   end
 
@@ -230,7 +230,7 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
     -- Clear comment map
     pcall(vim.api.nvim_buf_set_var, buf, 'mrreviewer_comment_map', {})
 
-    logger.log_info('Comments panel rendered (empty state)')
+    logger.info('comments_panel','Comments panel rendered (empty state)')
     return
   end
 
@@ -296,7 +296,7 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
   -- Setup keymaps
   M.setup_keymaps(buf, on_comment_selected_callback, on_open_thread_callback)
 
-  logger.log_info('Comments panel rendered', {
+  logger.info('comments_panel','Comments panel rendered', {
     total_comments = #filtered_comments,
     files_with_comments = vim.tbl_count(grouped),
     show_resolved = show_resolved,

@@ -19,13 +19,13 @@ function M.highlight_comment_line(line_number, duration)
   local buffers = diffview_state.panel_buffers
 
   if not buffers or not buffers.diff_new then
-    logger.log_warn('No diff buffers available for highlighting')
+    logger.warn('diff_panel','No diff buffers available for highlighting')
     return
   end
 
   local buf = buffers.diff_new
   if not vim.api.nvim_buf_is_valid(buf) then
-    logger.log_error('Diff buffer is not valid')
+    logger.error('diff_panel','Diff buffer is not valid')
     return
   end
 
@@ -44,7 +44,7 @@ function M.highlight_comment_line(line_number, duration)
   -- Validate line number
   local line_count = vim.api.nvim_buf_line_count(buf)
   if line_number < 1 or line_number > line_count then
-    logger.log_warn('Line number out of range: ' .. line_number)
+    logger.warn('diff_panel','Line number out of range: ' .. line_number)
     return
   end
 
@@ -58,7 +58,7 @@ function M.highlight_comment_line(line_number, duration)
     -1
   )
 
-  logger.log_debug('Highlighted line ' .. line_number .. ' in diff buffer')
+  logger.debug('diff_panel','Highlighted line ' .. line_number .. ' in diff buffer')
 
   -- Handle highlight duration
   if duration and duration > 0 then
@@ -66,7 +66,7 @@ function M.highlight_comment_line(line_number, duration)
     vim.defer_fn(function()
       if vim.api.nvim_buf_is_valid(buf) then
         vim.api.nvim_buf_clear_namespace(buf, ns_id, 0, -1)
-        logger.log_debug('Cleared highlight for line ' .. line_number)
+        logger.debug('diff_panel','Cleared highlight for line ' .. line_number)
       end
       diffview_state.highlight_timer = nil
     end, duration)
@@ -76,7 +76,7 @@ function M.highlight_comment_line(line_number, duration)
     diffview_state.highlight_timer = -1 -- Sentinel value indicating active highlight
   else
     -- Permanent highlight (nil or 0 duration)
-    logger.log_debug('Applied permanent highlight to line ' .. line_number)
+    logger.debug('diff_panel','Applied permanent highlight to line ' .. line_number)
   end
 end
 
@@ -86,7 +86,7 @@ end
 --- @return boolean Success status
 function M.update_file(mr_data, file_path)
   if not mr_data or not file_path then
-    logger.log_error('Missing MR data or file path')
+    logger.error('diff_panel','Missing MR data or file path')
     return false
   end
 
@@ -94,12 +94,12 @@ function M.update_file(mr_data, file_path)
   local head_sha = mr_data.diff_refs and mr_data.diff_refs.head_sha
 
   if not base_sha or not head_sha then
-    logger.log_error('Missing diff refs in MR data')
+    logger.error('diff_panel','Missing diff refs in MR data')
     utils.notify('Missing diff refs (base_sha/head_sha) in MR data', 'error')
     return false
   end
 
-  logger.log_info('Updating diff view for file: ' .. file_path)
+  logger.info('diff_panel','Updating diff view for file: ' .. file_path)
   utils.notify('Loading diff for ' .. file_path .. '...', 'info')
 
   -- Fetch file versions using existing function
@@ -107,13 +107,13 @@ function M.update_file(mr_data, file_path)
   local new_lines = view.fetch_file_versions(file_path, head_sha)
 
   if not old_lines then
-    logger.log_error('Failed to fetch old version of file: ' .. file_path)
+    logger.error('diff_panel','Failed to fetch old version of file: ' .. file_path)
     utils.notify('Failed to fetch old version of ' .. file_path, 'error')
     return false
   end
 
   if not new_lines then
-    logger.log_error('Failed to fetch new version of file: ' .. file_path)
+    logger.error('diff_panel','Failed to fetch new version of file: ' .. file_path)
     utils.notify('Failed to fetch new version of ' .. file_path, 'error')
     return false
   end
@@ -123,7 +123,7 @@ function M.update_file(mr_data, file_path)
   local buffers = diffview_state.panel_buffers
 
   if not buffers or not buffers.diff_old or not buffers.diff_new then
-    logger.log_error('Diff buffers not found in state')
+    logger.error('diff_panel','Diff buffers not found in state')
     return false
   end
 
@@ -132,7 +132,7 @@ function M.update_file(mr_data, file_path)
 
   -- Validate buffers
   if not vim.api.nvim_buf_is_valid(old_buf) or not vim.api.nvim_buf_is_valid(new_buf) then
-    logger.log_error('One or more diff buffers are invalid')
+    logger.error('diff_panel','One or more diff buffers are invalid')
     return false
   end
 
@@ -157,7 +157,7 @@ function M.update_file(mr_data, file_path)
     vim.api.nvim_buf_set_option(new_buf, 'filetype', ft)
   end
 
-  logger.log_info('Successfully updated diff view for: ' .. file_path)
+  logger.info('diff_panel','Successfully updated diff view for: ' .. file_path)
   utils.notify('Loaded diff for ' .. file_path, 'info')
 
   return true
@@ -169,7 +169,7 @@ end
 --- @return boolean Success status
 function M.render(mr_data, file_path)
   if not mr_data or not file_path then
-    logger.log_error('Missing MR data or file path for diff rendering')
+    logger.error('diff_panel','Missing MR data or file path for diff rendering')
     return false
   end
 
@@ -177,25 +177,25 @@ function M.render(mr_data, file_path)
   local head_sha = mr_data.diff_refs and mr_data.diff_refs.head_sha
 
   if not base_sha or not head_sha then
-    logger.log_error('Missing diff refs in MR data')
+    logger.error('diff_panel','Missing diff refs in MR data')
     utils.notify('Missing diff refs (base_sha/head_sha) in MR data', 'error')
     return false
   end
 
-  logger.log_info('Rendering diff for file: ' .. file_path)
+  logger.info('diff_panel','Rendering diff for file: ' .. file_path)
 
   -- Fetch file versions
   local old_lines = view.fetch_file_versions(file_path, base_sha)
   local new_lines = view.fetch_file_versions(file_path, head_sha)
 
   if not old_lines then
-    logger.log_error('Failed to fetch old version of file: ' .. file_path)
+    logger.error('diff_panel','Failed to fetch old version of file: ' .. file_path)
     utils.notify('Failed to fetch old version of ' .. file_path, 'error')
     return false
   end
 
   if not new_lines then
-    logger.log_error('Failed to fetch new version of file: ' .. file_path)
+    logger.error('diff_panel','Failed to fetch new version of file: ' .. file_path)
     utils.notify('Failed to fetch new version of ' .. file_path, 'error')
     return false
   end
@@ -206,12 +206,12 @@ function M.render(mr_data, file_path)
   local windows = diffview_state.panel_windows
 
   if not buffers or not buffers.diff_old or not buffers.diff_new then
-    logger.log_error('Diff buffers not found in state')
+    logger.error('diff_panel','Diff buffers not found in state')
     return false
   end
 
   if not windows or not windows.diff_old or not windows.diff_new then
-    logger.log_error('Diff windows not found in state')
+    logger.error('diff_panel','Diff windows not found in state')
     return false
   end
 
@@ -222,12 +222,12 @@ function M.render(mr_data, file_path)
 
   -- Validate buffers and windows
   if not vim.api.nvim_buf_is_valid(old_buf) or not vim.api.nvim_buf_is_valid(new_buf) then
-    logger.log_error('One or more diff buffers are invalid')
+    logger.error('diff_panel','One or more diff buffers are invalid')
     return false
   end
 
   if not vim.api.nvim_win_is_valid(old_win) or not vim.api.nvim_win_is_valid(new_win) then
-    logger.log_error('One or more diff windows are invalid')
+    logger.error('diff_panel','One or more diff windows are invalid')
     return false
   end
 
@@ -263,7 +263,7 @@ function M.render(mr_data, file_path)
   vim.api.nvim_win_set_option(old_win, 'cursorbind', true)
   vim.api.nvim_win_set_option(new_win, 'cursorbind', true)
 
-  logger.log_info('Successfully rendered side-by-side diff for: ' .. file_path)
+  logger.info('diff_panel','Successfully rendered side-by-side diff for: ' .. file_path)
 
   return true
 end

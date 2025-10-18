@@ -21,7 +21,7 @@ function M.create_three_pane_windows()
   local diff_width = math.floor(total_width * 0.6)
   local comments_width = total_width - files_width - diff_width -- Ensure we use all available space
 
-  logger.log_debug('Creating three-pane layout', {
+  logger.debug('layout','Creating three-pane layout', {
     total_width = total_width,
     files_width = files_width,
     diff_width = diff_width,
@@ -35,7 +35,7 @@ function M.create_three_pane_windows()
   local comments_buf = vim.api.nvim_create_buf(false, true)
 
   if files_buf == 0 or diff_old_buf == 0 or diff_new_buf == 0 or comments_buf == 0 then
-    logger.log_error('Failed to create buffers for diffview layout')
+    logger.error('layout','Failed to create buffers for diffview layout')
     return nil, 'Failed to create buffers'
   end
 
@@ -108,7 +108,7 @@ function M.create_three_pane_windows()
   vim.api.nvim_win_set_option(diff_old_win, 'diff', true)
   vim.api.nvim_win_set_option(diff_new_win, 'diff', true)
 
-  logger.log_info('Three-pane layout created successfully')
+  logger.info('layout','Three-pane layout created successfully')
 
   return {
     windows = windows,
@@ -124,7 +124,7 @@ function M.focus_pane(pane_name)
   local windows = diffview.panel_windows
 
   if not windows or vim.tbl_isempty(windows) then
-    logger.log_error('No diffview windows available to focus')
+    logger.error('layout','No diffview windows available to focus')
     return false
   end
 
@@ -138,17 +138,17 @@ function M.focus_pane(pane_name)
   elseif pane_name == 'comments' then
     target_win = windows.comments
   else
-    logger.log_error('Invalid pane name: ' .. tostring(pane_name))
+    logger.error('layout','Invalid pane name: ' .. tostring(pane_name))
     return false
   end
 
   if not target_win or not vim.api.nvim_win_is_valid(target_win) then
-    logger.log_error('Target window is not valid', { pane_name = pane_name, win = target_win })
+    logger.error('layout','Target window is not valid', { pane_name = pane_name, win = target_win })
     return false
   end
 
   vim.api.nvim_set_current_win(target_win)
-  logger.log_debug('Focused pane: ' .. pane_name)
+  logger.debug('layout','Focused pane: ' .. pane_name)
   return true
 end
 
@@ -156,12 +156,12 @@ end
 --- @param mr_data table MR data (not used yet, reserved for future)
 --- @return boolean Success status
 function M.create_layout(mr_data)
-  logger.log_info('Creating diffview layout')
+  logger.info('layout','Creating diffview layout')
 
   -- Create the window layout
   local layout, err = M.create_three_pane_windows()
   if not layout then
-    logger.log_error('Failed to create three-pane layout: ' .. tostring(err))
+    logger.error('layout','Failed to create three-pane layout: ' .. tostring(err))
     return false
   end
 
@@ -170,7 +170,7 @@ function M.create_layout(mr_data)
   diffview.panel_windows = layout.windows
   diffview.panel_buffers = layout.buffers
 
-  logger.log_debug('Stored layout in state', {
+  logger.debug('layout','Stored layout in state', {
     windows = vim.tbl_keys(layout.windows),
     buffers = vim.tbl_keys(layout.buffers),
   })
@@ -185,13 +185,13 @@ end
 --- Close the diffview layout and clean up state
 --- @return boolean Success status
 function M.close()
-  logger.log_info('Closing diffview layout')
+  logger.info('layout','Closing diffview layout')
 
   local diffview = state.get_diffview()
   local windows = diffview.panel_windows
 
   if not windows or vim.tbl_isempty(windows) then
-    logger.log_warn('No diffview windows to close')
+    logger.warn('layout','No diffview windows to close')
     state.clear_diffview()
     return true
   end
@@ -203,14 +203,14 @@ function M.close()
       local ok, err = pcall(vim.api.nvim_win_close, win, true)
       if ok then
         closed_count = closed_count + 1
-        logger.log_debug('Closed window: ' .. pane_name)
+        logger.debug('layout','Closed window: ' .. pane_name)
       else
-        logger.log_warn('Failed to close window: ' .. pane_name, { error = err })
+        logger.warn('layout','Failed to close window: ' .. pane_name, { error = err })
       end
     end
   end
 
-  logger.log_info('Closed ' .. closed_count .. ' diffview windows')
+  logger.info('layout','Closed ' .. closed_count .. ' diffview windows')
 
   -- Clear diffview state
   state.clear_diffview()

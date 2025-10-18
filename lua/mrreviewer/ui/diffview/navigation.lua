@@ -45,20 +45,20 @@ function M.highlight_comment_in_panel(comment_id)
   local panel_buffers = diffview.panel_buffers
 
   if not panel_buffers or not panel_buffers.comments then
-    logger.log_warn('Comments panel buffer not available for highlighting')
+    logger.warn('navigation', 'Comments panel buffer not available for highlighting')
     return
   end
 
   local buf = panel_buffers.comments
   if not vim.api.nvim_buf_is_valid(buf) then
-    logger.log_error('Comments panel buffer is not valid')
+    logger.error('navigation','Comments panel buffer is not valid')
     return
   end
 
   -- Get comment map from buffer variable
   local ok, comment_map = pcall(vim.api.nvim_buf_get_var, buf, 'mrreviewer_comment_map')
   if not ok or not comment_map then
-    logger.log_debug('No comment map available in comments panel')
+    logger.debug('navigation','No comment map available in comments panel')
     return
   end
 
@@ -77,7 +77,7 @@ function M.highlight_comment_in_panel(comment_id)
         0,
         -1
       )
-      logger.log_debug('Highlighted comment ' .. comment_id .. ' in panel at line ' .. line_num)
+      logger.debug('navigation','Highlighted comment ' .. comment_id .. ' in panel at line ' .. line_num)
       break
     end
   end
@@ -90,7 +90,7 @@ end
 --- @return boolean Success status
 function M.jump_to_comment(comment, highlight_duration, mr_data)
   if not comment or not comment.position then
-    logger.log_error('Invalid comment or missing position for jump')
+    logger.error('navigation','Invalid comment or missing position for jump')
     return false
   end
 
@@ -98,11 +98,11 @@ function M.jump_to_comment(comment, highlight_duration, mr_data)
   local line_number = comment.position.new_line or comment.position.old_line
 
   if not file_path or not line_number then
-    logger.log_error('Missing file path or line number in comment position')
+    logger.error('navigation','Missing file path or line number in comment position')
     return false
   end
 
-  logger.log_info('Jumping to comment', {
+  logger.info('navigation','Jumping to comment', {
     file = file_path,
     line = line_number,
     comment_id = comment.id,
@@ -113,7 +113,7 @@ function M.jump_to_comment(comment, highlight_duration, mr_data)
   -- Check if we need to switch files
   if diffview.selected_file ~= file_path then
     if not mr_data then
-      logger.log_error('MR data required to switch files')
+      logger.error('navigation','MR data required to switch files')
       return false
     end
 
@@ -125,14 +125,14 @@ function M.jump_to_comment(comment, highlight_duration, mr_data)
   -- Get the diff window (new version)
   local panel_windows = diffview.panel_windows
   if not panel_windows or not panel_windows.diff_new then
-    logger.log_error('Diff windows not available')
+    logger.error('navigation','Diff windows not available')
     return false
   end
 
   local diff_win = panel_windows.diff_new
 
   if not vim.api.nvim_win_is_valid(diff_win) then
-    logger.log_error('Diff window is not valid')
+    logger.error('navigation','Diff window is not valid')
     return false
   end
 
@@ -153,7 +153,7 @@ function M.jump_to_comment(comment, highlight_duration, mr_data)
   -- Highlight the comment in the comments panel
   M.highlight_comment_in_panel(comment.id)
 
-  logger.log_info('Successfully jumped to comment', {
+  logger.info('navigation','Successfully jumped to comment', {
     file = file_path,
     line = line_number,
   })
@@ -166,22 +166,22 @@ end
 --- @return boolean Success status
 function M.open_full_comment_thread(comment)
   if not comment then
-    logger.log_error('No comment provided to open_full_comment_thread')
+    logger.error('navigation','No comment provided to open_full_comment_thread')
     return false
   end
 
-  logger.log_info('Opening full comment thread', { comment_id = comment.id })
+  logger.info('navigation','Opening full comment thread', { comment_id = comment.id })
 
   -- Get the comments module that handles floating windows
   local ok, comments_module = pcall(require, 'mrreviewer.ui.comments')
   if not ok then
-    logger.log_error('Failed to load comments module: ' .. tostring(comments_module))
+    logger.error('navigation','Failed to load comments module: ' .. tostring(comments_module))
     return false
   end
 
   -- Check if the module has show_float function
   if not comments_module.show_float then
-    logger.log_error('Comments module does not have show_float function')
+    logger.error('navigation','Comments module does not have show_float function')
     return false
   end
 
@@ -189,9 +189,9 @@ function M.open_full_comment_thread(comment)
   local success = comments_module.show_float(comment)
 
   if success then
-    logger.log_info('Successfully opened comment thread')
+    logger.info('navigation','Successfully opened comment thread')
   else
-    logger.log_warn('Failed to open comment thread')
+    logger.warn('navigation','Failed to open comment thread')
   end
 
   return success
@@ -202,7 +202,7 @@ end
 --- @param mr_data table|nil MR data (optional, for context)
 function M.setup_diff_cursor_moved(comments, mr_data)
   if not comments or #comments == 0 then
-    logger.log_debug('No comments to track for cursor moved')
+    logger.debug('navigation','No comments to track for cursor moved')
     return
   end
 
@@ -210,7 +210,7 @@ function M.setup_diff_cursor_moved(comments, mr_data)
   local panel_windows = diffview.panel_windows
 
   if not panel_windows or not panel_windows.diff_new then
-    logger.log_warn('Diff windows not available for cursor tracking')
+    logger.warn('navigation','Diff windows not available for cursor tracking')
     return
   end
 
@@ -246,7 +246,7 @@ function M.setup_diff_cursor_moved(comments, mr_data)
         -- Highlight the comment in comments panel
         M.highlight_comment_in_panel(comment.id)
 
-        logger.log_debug('Cursor moved to comment', {
+        logger.debug('navigation','Cursor moved to comment', {
           line = line_number,
           comment_id = comment.id,
         })
@@ -266,7 +266,7 @@ function M.setup_diff_cursor_moved(comments, mr_data)
 
   table.insert(autocmd_ids, autocmd_id)
 
-  logger.log_info('Set up CursorMoved autocmd for diff window')
+  logger.info('navigation','Set up CursorMoved autocmd for diff window')
 end
 
 --- Cleanup autocmds created by navigation module
@@ -275,7 +275,7 @@ function M.cleanup_autocmds()
     pcall(vim.api.nvim_del_autocmd, autocmd_id)
   end
   autocmd_ids = {}
-  logger.log_debug('Cleaned up navigation autocmds')
+  logger.debug('navigation','Cleaned up navigation autocmds')
 end
 
 --- Jump to comment and return focus to comments panel
@@ -301,7 +301,7 @@ function M.jump_to_comment_and_return(comment, highlight_duration, mr_data)
     vim.defer_fn(function()
       if vim.api.nvim_win_is_valid(comments_win) then
         vim.api.nvim_set_current_win(comments_win)
-        logger.log_debug('Returned focus to comments panel')
+        logger.debug('navigation','Returned focus to comments panel')
       end
     end, 50)
   end
@@ -312,7 +312,7 @@ end
 --- Cleanup function to be called when closing diffview
 function M.cleanup()
   M.cleanup_autocmds()
-  logger.log_info('Navigation module cleaned up')
+  logger.info('navigation','Navigation module cleaned up')
 end
 
 return M
