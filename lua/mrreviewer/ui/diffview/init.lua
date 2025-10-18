@@ -83,7 +83,7 @@ function M.open(mr_data)
   logger.info('diffview', 'Opening diffview for MR')
 
   -- Wrap in error handler
-  local success, result = errors.try(function()
+  local result, err = errors.try(function()
     -- Validate MR data
     local valid, err_msg = validate_mr_data(mr_data)
     if not valid then
@@ -172,9 +172,9 @@ function M.open(mr_data)
     return true
   end)
 
-  if not success then
-    local error_msg = result or 'Unknown error'
-    logger.error('diffview', 'Failed to open diffview: ' .. error_msg)
+  if err then
+    local error_msg = err.message or tostring(err)
+    logger.error('diffview', 'Failed to open diffview', { error = error_msg })
     utils.notify('Failed to open diffview: ' .. error_msg, 'error')
 
     -- Clean up any partial state
@@ -191,7 +191,7 @@ end
 function M.close()
   logger.info('diffview', 'Closing diffview')
 
-  local success, result = errors.try(function()
+  local result, err = errors.try(function()
     -- Clean up navigation autocmds
     navigation.cleanup()
 
@@ -205,9 +205,9 @@ function M.close()
     return true
   end)
 
-  if not success then
-    local error_msg = result or 'Unknown error'
-    logger.error('diffview', 'Error while closing diffview: ' .. error_msg)
+  if err then
+    local error_msg = err.message or tostring(err)
+    logger.error('diffview', 'Error while closing diffview', { error = error_msg })
 
     -- Try to force cleanup even if error occurred
     pcall(navigation.cleanup)
