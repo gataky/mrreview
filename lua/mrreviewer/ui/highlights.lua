@@ -39,6 +39,24 @@ local highlights = {
   MRReviewerTitle = { link = 'Title' },
   MRReviewerBorder = { link = 'FloatBorder' },
   MRReviewerSelection = { link = 'Visual' },
+
+  -- File tree highlights (inspired by diffview.nvim)
+  MRReviewerFilePanelTitle = { fg = '#7aa2f7', bold = true },
+  MRReviewerFilePanelCounter = { fg = '#bb9af7', bold = true },
+  MRReviewerFilePanelFileName = { link = 'Normal' },
+  MRReviewerFilePanelPath = { link = 'Comment' },
+  MRReviewerFilePanelSelected = { link = 'CursorLine' },
+
+  -- Directory/folder highlights
+  MRReviewerFolderName = { link = 'Directory' },
+  MRReviewerFolderSign = { link = 'PreProc' },
+
+  -- File node highlights
+  MRReviewerFileName = { link = 'Normal' },
+  MRReviewerFileSign = { fg = '#565f89' },
+
+  -- Tree structure indentation (subtle guide)
+  MRReviewerTreeIndent = { fg = '#3b4261' },
 }
 
 --- Setup highlight groups
@@ -82,6 +100,17 @@ function M.get_group(element)
     title = 'MRReviewerTitle',
     border = 'MRReviewerBorder',
     selection = 'MRReviewerSelection',
+    -- File tree highlights
+    file_panel_title = 'MRReviewerFilePanelTitle',
+    file_panel_counter = 'MRReviewerFilePanelCounter',
+    file_panel_filename = 'MRReviewerFilePanelFileName',
+    file_panel_path = 'MRReviewerFilePanelPath',
+    file_panel_selected = 'MRReviewerFilePanelSelected',
+    folder_name = 'MRReviewerFolderName',
+    folder_sign = 'MRReviewerFolderSign',
+    file_name = 'MRReviewerFileName',
+    file_sign = 'MRReviewerFileSign',
+    tree_indent = 'MRReviewerTreeIndent',
   }
 
   return group_map[element] or 'Normal'

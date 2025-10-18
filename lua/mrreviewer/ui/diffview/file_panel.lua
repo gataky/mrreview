@@ -229,6 +229,79 @@ function M.setup_keymaps(buf, on_file_selected_callback)
   logger.debug('file_panel','File panel keymaps set up for buffer ' .. buf)
 end
 
+--- Apply syntax highlighting to tree elements (icons, names, indentation)
+--- @param buf number Buffer ID
+--- @param visible_nodes table List of visible nodes
+--- @param indent_size number Number of spaces per indentation level
+local function apply_tree_highlights(buf, visible_nodes, indent_size)
+  local ns_id = vim.api.nvim_create_namespace('mrreviewer_file_tree_highlights')
+  vim.api.nvim_buf_clear_namespace(buf, ns_id, 0, -1)
+
+  for line_idx, node in ipairs(visible_nodes) do
+    local line_num = line_idx - 1 -- 0-indexed for nvim API
+    local col = 0
+
+    -- Highlight indentation (subtle guide lines)
+    if node.depth > 0 then
+      local indent_len = node.depth * indent_size
+      vim.api.nvim_buf_add_highlight(
+        buf,
+        ns_id,
+        highlights.get_group('tree_indent'),
+        line_num,
+        col,
+        col + indent_len
+      )
+      col = col + indent_len
+    end
+
+    -- Highlight icon
+    local icon_len = vim.fn.strwidth(
+      node:is_dir()
+        and (state.get_diffview().collapsed_dirs[node.path]
+          and (config.get_value('diffview.file_tree.dir_collapsed_icon') or '▸')
+          or (config.get_value('diffview.file_tree.dir_expanded_icon') or '▾'))
+        or (config.get_value('diffview.file_tree.file_icon') or '•')
+    )
+    vim.api.nvim_buf_add_highlight(
+      buf,
+      ns_id,
+      node:is_dir() and highlights.get_group('folder_sign') or highlights.get_group('file_sign'),
+      line_num,
+      col,
+      col + icon_len
+    )
+    col = col + icon_len + 1 -- +1 for space after icon
+
+    -- Highlight name
+    local name_len = vim.fn.strwidth(node.name)
+    vim.api.nvim_buf_add_highlight(
+      buf,
+      ns_id,
+      node:is_dir() and highlights.get_group('folder_name') or highlights.get_group('file_name'),
+      line_num,
+      col,
+      col + name_len
+    )
+    col = col + name_len
+
+    -- Highlight comment count if present
+    if node:is_file() and node.comment_count and node.comment_count.total > 0 then
+      -- Skip the "  " before the comment icon
+      col = col + 2
+      -- Highlight the entire comment count display
+      vim.api.nvim_buf_add_highlight(
+        buf,
+        ns_id,
+        highlights.get_group('comment_count'),
+        line_num,
+        col,
+        -1 -- to end of line
+      )
+    end
+  end
+end
+
 --- Apply highlighting to the currently selected file
 --- @param buf number Buffer ID
 --- @param selected_file string|nil Currently selected file path
@@ -255,7 +328,7 @@ local function highlight_selected_file(buf, selected_file)
       vim.api.nvim_buf_add_highlight(
         buf,
         ns_id,
-        highlights.get_group('selected_comment'),
+        highlights.get_group('file_panel_selected'),
         i - 1,
         0,
         -1
@@ -376,6 +449,9 @@ function M.render(files, comments, buf, on_file_selected_callback)
 
   -- Store node metadata in buffer variable (task 4.8)
   vim.api.nvim_buf_set_var(buf, 'mrreviewer_file_tree_nodes', node_metadata)
+
+  -- Apply syntax highlighting to tree elements
+  apply_tree_highlights(buf, visible_nodes, indent_size)
 
   -- Apply highlighting for selected file
   highlight_selected_file(buf, diffview.selected_file)
