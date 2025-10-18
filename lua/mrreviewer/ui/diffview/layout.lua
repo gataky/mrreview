@@ -16,9 +16,9 @@ function M.create_three_pane_windows()
   -- Get total width for calculating proportions
   local total_width = vim.o.columns
 
-  -- Calculate widths: 20% | 60% | 20%
-  local files_width = math.floor(total_width * 0.1)
-  local diff_width = math.floor(total_width * 0.8)
+  -- Calculate widths: 15% | 70% | 15%
+  local files_width = math.floor(total_width * 0.15)
+  local diff_width = math.floor(total_width * 0.70)
   local comments_width = total_width - files_width - diff_width -- Ensure we use all available space
 
   logger.debug('layout','Creating three-pane layout', {
@@ -67,12 +67,12 @@ function M.create_three_pane_windows()
   -- Create the layout:
   -- Start with full window, then split to create three panes
 
-  -- Create files pane on the left (20%)
+  -- Create files pane on the left (15%)
   vim.cmd('topleft ' .. files_width .. 'vsplit')
   local files_win = vim.api.nvim_get_current_win()
   vim.api.nvim_win_set_buf(files_win, files_buf)
 
-  -- Move to the right pane and create diff panes (60% total, split in half)
+  -- Move to the right pane and create diff panes (70% total, split in half)
   vim.cmd('wincmd l')
 
   -- Create diff panes side-by-side in the middle section
@@ -84,20 +84,19 @@ function M.create_three_pane_windows()
   local diff_old_win = vim.api.nvim_get_current_win()
   vim.api.nvim_win_set_buf(diff_old_win, diff_old_buf)
 
-  -- Equalize the diff window widths
-  vim.cmd('wincmd =')
-
-  -- Calculate exact width for each diff pane (half of diff_width)
-  local half_diff_width = math.floor(diff_width / 2)
-  vim.api.nvim_win_set_width(diff_old_win, half_diff_width)
-  vim.api.nvim_win_set_width(diff_new_win, half_diff_width)
-
-  -- Move to the rightmost section and create comments pane (20%)
+  -- Move to the rightmost section and create comments pane (15%)
   vim.cmd('wincmd l')
   vim.cmd('wincmd l')
   vim.cmd('botright ' .. comments_width .. 'vsplit')
   local comments_win = vim.api.nvim_get_current_win()
   vim.api.nvim_win_set_buf(comments_win, comments_buf)
+
+  -- Now explicitly set all window widths to maintain exact proportions
+  local half_diff_width = math.floor(diff_width / 2)
+  vim.api.nvim_win_set_width(files_win, files_width)
+  vim.api.nvim_win_set_width(diff_old_win, half_diff_width)
+  vim.api.nvim_win_set_width(diff_new_win, half_diff_width)
+  vim.api.nvim_win_set_width(comments_win, comments_width)
 
   -- Set window options for all panes
   local windows = {
