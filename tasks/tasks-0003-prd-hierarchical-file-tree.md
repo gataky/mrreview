@@ -38,13 +38,13 @@ Generated from: `0003-prd-hierarchical-file-tree.md`
 - [x] 1.7 Add logger integration for debugging node operations
 
 ### 2.0 Implement Tree Building from Flat File List
-- [ ] 2.1 Implement `build_tree(file_paths)` function in `file_tree.lua`
-- [ ] 2.2 Add logic to parse file paths and extract directory components
-- [ ] 2.3 Implement directory node creation for intermediate directories
-- [ ] 2.4 Add logic to attach file nodes to appropriate parent directories
-- [ ] 2.5 Implement depth calculation based on path hierarchy
-- [ ] 2.6 Add sorting logic within directories (dirs before files, alphabetical)
-- [ ] 2.7 Add comment count integration for file nodes using `calculate_comment_counts()`
+- [x] 2.1 Implement `build_tree(file_paths)` function in `file_tree.lua`
+- [x] 2.2 Add logic to parse file paths and extract directory components
+- [x] 2.3 Implement directory node creation for intermediate directories
+- [x] 2.4 Add logic to attach file nodes to appropriate parent directories
+- [x] 2.5 Implement depth calculation based on path hierarchy
+- [x] 2.6 Add sorting logic within directories (dirs before files, alphabetical)
+- [x] 2.7 Add comment count integration for file nodes using `calculate_comment_counts()`
 - [ ] 2.8 Add unit tests for tree building with various file path structures
 
 ### 3.0 Add Collapse/Expand State Management
