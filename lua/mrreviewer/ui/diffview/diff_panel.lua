@@ -328,11 +328,26 @@ function M.setup_keymaps(old_buf, new_buf)
       local comment = navigation.find_comment_at_line(selected_file, line_number, comments)
 
       if comment then
-        logger.info('diff_panel', 'Showing comment preview', { comment_id = comment.id })
+        logger.info('diff_panel', 'Found comment at line', {
+          comment_id = comment.id,
+          line = line_number,
+          file = selected_file,
+        })
         navigation.open_full_comment_thread(comment)
       else
-        logger.info('diff_panel', 'No comment at line ' .. line_number)
-        utils.notify('No comment at line ' .. line_number, 'info')
+        -- Debug: show all comment lines for this file
+        local comment_lines = {}
+        for _, c in ipairs(comments) do
+          if c.position and (c.position.new_path == selected_file or c.position.old_path == selected_file) then
+            table.insert(comment_lines, c.position.new_line or c.position.old_line)
+          end
+        end
+        logger.info('diff_panel', 'No comment found', {
+          searched_line = line_number,
+          file = selected_file,
+          available_comment_lines = table.concat(comment_lines, ', '),
+        })
+        utils.notify(string.format('No comment at line %d. Comments at: %s', line_number, table.concat(comment_lines, ', ')), 'info')
       end
     end, opts)
 
