@@ -66,15 +66,15 @@ Generated from: `0003-prd-hierarchical-file-tree.md`
 - [x] 4.7 Update `highlight_selected_file()` to parse tree format lines
 - [x] 4.8 Store node metadata in buffer variables for cursor operations
 
-### 5.0 Enhance Navigation for Tree Structure
-- [ ] 5.1 Update `get_file_at_cursor()` to detect both files and directories
-- [ ] 5.2 Add `get_node_at_cursor()` function returning {type, path, node}
-- [ ] 5.3 Update `<CR>` keymap to handle directory toggle vs file selection
-- [ ] 5.4 Add `<Tab>` keymap alternative for toggling directories
-- [ ] 5.5 Add `za` keymap (vim-style fold toggle) for directories
-- [ ] 5.6 Update `on_file_selected()` to only trigger for file nodes
-- [ ] 5.7 Implement re-render after directory toggle
-- [ ] 5.8 Preserve cursor position after re-render
+### 5.0 Enhance Navigation for Tree Structure ✓
+- [x] 5.1 Update `get_file_at_cursor()` to detect both files and directories
+- [x] 5.2 Add `get_node_at_cursor()` function returning {type, path, node}
+- [x] 5.3 Update `<CR>` keymap to handle directory toggle vs file selection
+- [x] 5.4 Add `<Tab>` keymap alternative for toggling directories
+- [x] 5.5 Add `za` keymap (vim-style fold toggle) for directories
+- [x] 5.6 Update `on_file_selected()` to only trigger for file nodes
+- [x] 5.7 Implement re-render after directory toggle
+- [x] 5.8 Preserve cursor position after re-render
 
 ### 6.0 Add Configuration Options
 - [ ] 6.1 Add `diffview.file_tree` section to `core/config.lua` defaults

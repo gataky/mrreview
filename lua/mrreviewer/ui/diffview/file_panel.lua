@@ -8,6 +8,12 @@ local highlights = require('mrreviewer.ui.highlights')
 local file_tree = require('mrreviewer.ui.diffview.file_tree')
 local config = require('mrreviewer.core.config')
 
+-- Cache for last rendered data (for re-rendering after toggle)
+local render_cache = {
+  files = nil,
+  comments = nil,
+}
+
 --- Check if a directory is collapsed
 --- @param dir_path string The directory path to check
 --- @return boolean True if directory is collapsed
@@ -113,17 +119,38 @@ local function sort_files_naturally(files)
   return sorted
 end
 
+--- Get the node at the current cursor position
+--- @return table|nil Node info: {path: string, kind: string, depth: number} or nil if not found
+function M.get_node_at_cursor()
+  local cursor_line = vim.api.nvim_win_get_cursor(0)[1] -- 1-indexed
+
+  -- Get node metadata from buffer
+  local buf = vim.api.nvim_get_current_buf()
+  local ok, node_metadata = pcall(vim.api.nvim_buf_get_var, buf, 'mrreviewer_file_tree_nodes')
+
+  if not ok or not node_metadata then
+    logger.warn('file_panel', 'No node metadata found in buffer')
+    return nil
+  end
+
+  -- Get node at cursor line
+  local node_info = node_metadata[cursor_line]
+  if not node_info then
+    logger.warn('file_panel', 'No node at cursor line', { line = cursor_line })
+    return nil
+  end
+
+  return node_info
+end
+
 --- Get the file path at the current cursor position
 --- @return string|nil File path or nil if not found
 function M.get_file_at_cursor()
-  local line = vim.api.nvim_get_current_line()
+  local node_info = M.get_node_at_cursor()
 
-  -- Remove leading whitespace and comment indicator
-  -- Format is: "  <filename>  💬 <resolved>/<total>" or "  <filename>"
-  local file_path = line:match('^%s*(.-)%s*💬') or line:match('^%s*(.-)%s*$')
-
-  if file_path and file_path ~= '' then
-    return file_path
+  -- Only return path if it's a file node
+  if node_info and node_info.kind == 'file' then
+    return node_info.path
   end
 
   return nil
@@ -163,11 +190,39 @@ function M.setup_keymaps(buf, on_file_selected_callback)
   -- j/k navigation (already works by default, but we can add custom behavior if needed)
   -- These are standard vim motions, so no need to remap
 
-  -- Enter to select file
+  -- Enter to toggle directories or select files (task 5.3)
   vim.keymap.set('n', '<CR>', function()
-    local file_path = M.get_file_at_cursor()
-    if file_path then
-      M.on_file_selected(file_path, on_file_selected_callback)
+    local node_info = M.get_node_at_cursor()
+    if not node_info then
+      return
+    end
+
+    if node_info.kind == 'dir' then
+      -- Toggle directory collapse/expand
+      M.toggle_directory(node_info.path)
+      -- Re-render to show changes (task 5.7)
+      M.render_current(buf, on_file_selected_callback)
+    elseif node_info.kind == 'file' then
+      -- Select file (task 5.6)
+      M.on_file_selected(node_info.path, on_file_selected_callback)
+    end
+  end, opts)
+
+  -- Tab to toggle directory collapse/expand (task 5.4)
+  vim.keymap.set('n', '<Tab>', function()
+    local node_info = M.get_node_at_cursor()
+    if node_info and node_info.kind == 'dir' then
+      M.toggle_directory(node_info.path)
+      M.render_current(buf, on_file_selected_callback)
+    end
+  end, opts)
+
+  -- za (vim-style fold toggle) for directories (task 5.5)
+  vim.keymap.set('n', 'za', function()
+    local node_info = M.get_node_at_cursor()
+    if node_info and node_info.kind == 'dir' then
+      M.toggle_directory(node_info.path)
+      M.render_current(buf, on_file_selected_callback)
     end
   end, opts)
 
@@ -210,6 +265,30 @@ local function highlight_selected_file(buf, selected_file)
   end
 end
 
+--- Re-render the file panel with cached data and preserve cursor position (tasks 5.7, 5.8)
+--- @param buf number Buffer ID
+--- @param on_file_selected_callback function|nil Optional callback when file is selected
+function M.render_current(buf, on_file_selected_callback)
+  if not render_cache.files then
+    logger.warn('file_panel', 'Cannot re-render: no cached files')
+    return
+  end
+
+  -- Save cursor position (task 5.8)
+  local cursor_pos = vim.api.nvim_win_get_cursor(0)
+
+  -- Re-render with cached data
+  M.render(render_cache.files, render_cache.comments, buf, on_file_selected_callback)
+
+  -- Restore cursor position (task 5.8)
+  -- Make sure cursor is within bounds
+  local line_count = vim.api.nvim_buf_line_count(buf)
+  if cursor_pos[1] > line_count then
+    cursor_pos[1] = line_count
+  end
+  pcall(vim.api.nvim_win_set_cursor, 0, cursor_pos)
+end
+
 --- Render the file panel with hierarchical tree structure
 --- @param files table List of file paths
 --- @param comments table List of comments
@@ -220,6 +299,10 @@ function M.render(files, comments, buf, on_file_selected_callback)
     logger.warn('file_panel','No files provided to file_panel.render')
     return
   end
+
+  -- Cache files and comments for re-rendering (task 5.7)
+  render_cache.files = files
+  render_cache.comments = comments
 
   -- Get buffer from state if not provided
   if not buf then
