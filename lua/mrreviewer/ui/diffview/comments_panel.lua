@@ -8,6 +8,7 @@ local logger = require('mrreviewer.core.logger')
 local highlights = require('mrreviewer.ui.highlights')
 local formatting = require('mrreviewer.ui.comments.formatting')
 local card_renderer = require('mrreviewer.ui.comments.card_renderer')
+local card_navigator = require('mrreviewer.ui.comments.card_navigator')
 
 --- Group comments by file, maintaining file tree order
 --- @param comments table List of all comments
@@ -50,23 +51,15 @@ function M.group_by_file(comments, files)
 end
 
 --- Get the comment data at the current cursor position
+--- Returns the primary (first) comment from the card at cursor
 --- @return table|nil Comment data or nil if not found
 function M.get_comment_at_cursor()
-  local line = vim.api.nvim_get_current_line()
   local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
 
   logger.debug('comments_panel', 'get_comment_at_cursor called', {
-    line = line,
     cursor_line = cursor_line,
   })
 
-  -- Check if this is a comment line (starts with "  Line " - note the leading spaces)
-  if not line:match('^%s*Line %d+') then
-    logger.debug('comments_panel', 'Not a comment line', { line = line })
-    return nil
-  end
-
-  -- Extract comment ID from the line (we'll store it as metadata)
   local diffview = state.get_diffview()
   local panel_buffers = diffview.panel_buffers
 
@@ -81,18 +74,26 @@ function M.get_comment_at_cursor()
     return nil
   end
 
-  -- Get comment from stored metadata
-  -- We'll store comment references in buffer variables
-  local ok, comment_map = pcall(vim.api.nvim_buf_get_var, buf, 'mrreviewer_comment_map')
-  if not ok or not comment_map then
-    logger.debug('comments_panel', 'No comment map found in buffer', { ok = ok })
+  -- Get card from stored card_map
+  local ok, card_map = pcall(vim.api.nvim_buf_get_var, buf, 'mrreviewer_card_map')
+  if not ok or not card_map then
+    logger.debug('comments_panel', 'No card map found in buffer', { ok = ok })
     return nil
   end
 
-  local comment = comment_map[cursor_line]
-  logger.debug('comments_panel', 'Found comment', {
+  local card = card_map[cursor_line]
+  if not card then
+    logger.debug('comments_panel', 'No card found at cursor line')
+    return nil
+  end
+
+  -- Return the first comment from the card (primary comment)
+  local comment = card.comments and card.comments[1]
+  logger.debug('comments_panel', 'Found comment from card', {
     has_comment = comment ~= nil,
     comment_id = comment and comment.id,
+    card_id = card.id,
+    is_thread = card.is_thread,
   })
 
   return comment
@@ -140,6 +141,68 @@ function M.setup_keymaps(buf, on_comment_selected_callback, on_open_thread_callb
   vim.keymap.set('n', 'r', function()
     M.toggle_resolved_filter()
   end, vim.tbl_extend('force', opts, { desc = 'Toggle resolved comments filter' }))
+
+  -- Tab to navigate to next card
+  vim.keymap.set('n', '<Tab>', function()
+    local win = vim.api.nvim_get_current_win()
+    card_navigator.move_to_next_card(buf, win)
+  end, vim.tbl_extend('force', opts, { desc = 'Move to next comment card' }))
+
+  -- Shift+Tab to navigate to previous card
+  vim.keymap.set('n', '<S-Tab>', function()
+    local win = vim.api.nvim_get_current_win()
+    card_navigator.move_to_prev_card(buf, win)
+  end, vim.tbl_extend('force', opts, { desc = 'Move to previous comment card' }))
+
+  -- ]f to navigate to next file section's first card
+  vim.keymap.set('n', ']f', function()
+    local win = vim.api.nvim_get_current_win()
+    local cursor = vim.api.nvim_win_get_cursor(win)
+    local current_line = cursor[1]
+
+    -- Find next file section
+    local next_file_line = card_navigator.find_next_file_section(buf, current_line)
+    if next_file_line then
+      -- Move to the next file header
+      vim.api.nvim_win_set_cursor(win, { next_file_line, 0 })
+
+      -- Find the first card after this file header
+      local ok, card_map = pcall(vim.api.nvim_buf_get_var, buf, 'mrreviewer_card_map')
+      if ok and card_map then
+        for line = next_file_line + 1, vim.api.nvim_buf_line_count(buf) do
+          if card_map[line] then
+            vim.api.nvim_win_set_cursor(win, { line, 0 })
+            break
+          end
+        end
+      end
+    end
+  end, vim.tbl_extend('force', opts, { desc = 'Move to next file section' }))
+
+  -- [f to navigate to previous file section's first card
+  vim.keymap.set('n', '[f', function()
+    local win = vim.api.nvim_get_current_win()
+    local cursor = vim.api.nvim_win_get_cursor(win)
+    local current_line = cursor[1]
+
+    -- Find previous file section
+    local prev_file_line = card_navigator.find_prev_file_section(buf, current_line)
+    if prev_file_line then
+      -- Move to the previous file header
+      vim.api.nvim_win_set_cursor(win, { prev_file_line, 0 })
+
+      -- Find the first card after this file header
+      local ok, card_map = pcall(vim.api.nvim_buf_get_var, buf, 'mrreviewer_card_map')
+      if ok and card_map then
+        for line = prev_file_line + 1, vim.api.nvim_buf_line_count(buf) do
+          if card_map[line] then
+            vim.api.nvim_win_set_cursor(win, { line, 0 })
+            break
+          end
+        end
+      end
+    end
+  end, vim.tbl_extend('force', opts, { desc = 'Move to previous file section' }))
 
   logger.debug('comments_panel','Comments panel keymaps set up for buffer ' .. buf)
 end

@@ -6,7 +6,7 @@
 - `lua/mrreviewer/core/state.lua` - State management for tracking selected card and collapsed sections
 - `lua/mrreviewer/ui/comments/card_renderer.lua` - **[CREATED]** Card rendering module with complete implementation
 - `lua/mrreviewer/ui/diffview/comments_panel.lua` - **[MODIFIED]** Updated render() function to use card-based rendering
-- `lua/mrreviewer/ui/comments/card_navigator.lua` - New module for card-level navigation logic
+- `lua/mrreviewer/ui/comments/card_navigator.lua` - **[CREATED]** Navigation module with function stubs for card-level navigation
 
 ### Notes
 
@@ -28,7 +28,7 @@
   - [x] 1.7 Implement `render_card_with_borders()` to wrap card content in box-drawing characters (┌─┐ │ └─┘)
   - [x] 1.8 Add unit helper `get_card_height()` to calculate number of lines a card occupies in buffer
 
-- [ ] 2.0 Implement card-based buffer rendering with visual card boundaries
+- [x] 2.0 Implement card-based buffer rendering with visual card boundaries
   - [x] 2.1 Update `comments_panel.lua` `render()` function to use card-based rendering instead of line-based
   - [x] 2.2 Build card list from grouped comments using `card_renderer.group_comments_into_cards()`
   - [x] 2.3 Create new `card_map` structure mapping line ranges to card objects (replaces single-line comment_map)
@@ -39,18 +39,18 @@
   - [x] 2.8 Add special handling for cards with resolved status (dim entire card using dedicated highlight group)
 
 - [ ] 3.0 Implement card-level navigation system (Tab/Shift+Tab, ]f/[f)
-  - [ ] 3.1 Create `lua/mrreviewer/ui/comments/card_navigator.lua` module for navigation logic
-  - [ ] 3.2 Implement `find_card_at_line()` to determine which card the cursor is currently in based on card_map
-  - [ ] 3.3 Implement `move_to_next_card()` to find next card and move cursor to its first line
-  - [ ] 3.4 Implement `move_to_prev_card()` to find previous card and move cursor to its first line
-  - [ ] 3.5 Implement `find_next_file_section()` to locate the next file header in the buffer
-  - [ ] 3.6 Implement `find_prev_file_section()` to locate the previous file header in the buffer
-  - [ ] 3.7 Update `setup_keymaps()` in `comments_panel.lua` to add Tab keymap calling `move_to_next_card()`
-  - [ ] 3.8 Update `setup_keymaps()` to add Shift+Tab (mapped as `<S-Tab>`) calling `move_to_prev_card()`
-  - [ ] 3.9 Update `setup_keymaps()` to add `]f` keymap calling navigation to next file's first card
-  - [ ] 3.10 Update `setup_keymaps()` to add `[f` keymap calling navigation to previous file's first card
-  - [ ] 3.11 Update `get_comment_at_cursor()` to work with card_map (return the primary comment from the card)
-  - [ ] 3.12 Ensure Enter key still works to jump to comment location in diff (should use first comment in card's thread)
+  - [x] 3.1 Create `lua/mrreviewer/ui/comments/card_navigator.lua` module for navigation logic
+  - [x] 3.2 Implement `find_card_at_line()` to determine which card the cursor is currently in based on card_map
+  - [x] 3.3 Implement `move_to_next_card()` to find next card and move cursor to its first line
+  - [x] 3.4 Implement `move_to_prev_card()` to find previous card and move cursor to its first line
+  - [x] 3.5 Implement `find_next_file_section()` to locate the next file header in the buffer
+  - [x] 3.6 Implement `find_prev_file_section()` to locate the previous file header in the buffer
+  - [x] 3.7 Update `setup_keymaps()` in `comments_panel.lua` to add Tab keymap calling `move_to_next_card()`
+  - [x] 3.8 Update `setup_keymaps()` to add Shift+Tab (mapped as `<S-Tab>`) calling `move_to_prev_card()`
+  - [x] 3.9 Update `setup_keymaps()` to add `]f` keymap calling navigation to next file's first card
+  - [x] 3.10 Update `setup_keymaps()` to add `[f` keymap calling navigation to previous file's first card
+  - [x] 3.11 Update `get_comment_at_cursor()` to work with card_map (return the primary comment from the card)
+  - [x] 3.12 Ensure Enter key still works to jump to comment location in diff (should use first comment in card's thread)
 
 - [ ] 4.0 Add collapsible file sections and orphaned comments handling
   - [ ] 4.1 Add `collapsed_sections` table to diffview state in `state.lua` to track which file sections are collapsed
