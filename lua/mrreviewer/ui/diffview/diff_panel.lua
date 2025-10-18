@@ -160,6 +160,9 @@ function M.update_file(mr_data, file_path)
   logger.info('diff_panel','Successfully updated diff view for: ' .. file_path)
   utils.notify('Loaded diff for ' .. file_path, 'info')
 
+  -- Setup keymaps for diff buffers (re-setup after update)
+  M.setup_keymaps(old_buf, new_buf)
+
   return true
 end
 
