@@ -33,6 +33,7 @@ function M.setup(opts)
     -- Setup highlights
     local highlights = require('mrreviewer.ui.highlights')
     highlights.setup()
+    highlights.define_signs()
 
     -- Mark plugin as initialized
     state_module.set_initialized(true)
