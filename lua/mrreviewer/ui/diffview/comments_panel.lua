@@ -103,7 +103,9 @@ end
 --- @param buf number Buffer ID
 --- @param on_comment_selected_callback function|nil Optional callback when comment is selected
 --- @param on_open_thread_callback function|nil Optional callback to open full thread
-function M.setup_keymaps(buf, on_comment_selected_callback, on_open_thread_callback)
+--- @param comments table|nil List of all comments (for re-rendering on toggle)
+--- @param files table|nil List of file paths (for re-rendering on toggle)
+function M.setup_keymaps(buf, on_comment_selected_callback, on_open_thread_callback, comments, files)
   local opts = { noremap = true, silent = true, buffer = buf }
 
   logger.debug('comments_panel', 'Setting up keymaps for buffer ' .. buf)
@@ -204,6 +206,15 @@ function M.setup_keymaps(buf, on_comment_selected_callback, on_open_thread_callb
     end
   end, vim.tbl_extend('force', opts, { desc = 'Move to previous file section' }))
 
+  -- za to toggle file section collapse/expand
+  vim.keymap.set('n', 'za', function()
+    local success = M.toggle_file_section()
+    if success and comments and files then
+      -- Re-render to update the display
+      M.render(comments, files, buf, on_comment_selected_callback, on_open_thread_callback)
+    end
+  end, vim.tbl_extend('force', opts, { desc = 'Toggle file section collapse' }))
+
   logger.debug('comments_panel','Comments panel keymaps set up for buffer ' .. buf)
 end
 
@@ -248,6 +259,66 @@ function M.filter_by_status(comments, show_resolved)
   })
 
   return filtered
+end
+
+--- Check if a file section is collapsed in the comments panel
+--- @param file_path string File path to check
+--- @return boolean True if the section is collapsed, false otherwise
+function M.is_section_collapsed(file_path)
+  if not file_path then
+    return false
+  end
+
+  local diffview = state.get_diffview()
+  local collapsed_sections = diffview.collapsed_sections or {}
+
+  return collapsed_sections[file_path] == true
+end
+
+--- Toggle the collapsed state of a file section at cursor position
+--- @return boolean Success status
+function M.toggle_file_section()
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local current_line = cursor[1]
+
+  -- Get the current buffer
+  local buf = vim.api.nvim_get_current_buf()
+
+  -- Get the line content to check if it's a file header
+  local lines = vim.api.nvim_buf_get_lines(buf, current_line - 1, current_line, false)
+  if #lines == 0 then
+    logger.debug('comments_panel', 'No line found at cursor position')
+    return false
+  end
+
+  local line = lines[1]
+
+  -- Check if this is a file header line (starts with ▼ or ▶ followed by 📁)
+  local file_path = line:match('^[▼▶]%s*📁%s+(.-)%s+%(%d+%s+comments%)$')
+
+  if not file_path then
+    logger.debug('comments_panel', 'Cursor not on a file header line', { line = line })
+    return false
+  end
+
+  -- Toggle the collapsed state in diffview state
+  local diffview = state.get_diffview()
+  if not diffview.collapsed_sections then
+    diffview.collapsed_sections = {}
+  end
+
+  local was_collapsed = diffview.collapsed_sections[file_path] == true
+  diffview.collapsed_sections[file_path] = not was_collapsed
+
+  logger.info('comments_panel', 'Toggled file section', {
+    file_path = file_path,
+    now_collapsed = not was_collapsed,
+  })
+
+  -- Trigger re-render to update the display
+  -- The render function will be called by the keymap handler after this returns
+
+  return true
 end
 
 --- Apply highlighting to the currently selected comment
@@ -363,14 +434,21 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
       table.insert(lines, '')
       current_line = current_line + 1
 
-      table.insert(lines, '📁 ' .. file_path .. ' (' .. #file_cards .. ' comments)')
+      -- Check if section is collapsed and add appropriate indicator
+      local is_collapsed = M.is_section_collapsed(file_path)
+      local collapse_indicator = is_collapsed and '▶' or '▼'
+      table.insert(lines, collapse_indicator .. ' 📁 ' .. file_path .. ' (' .. #file_cards .. ' comments)')
       current_line = current_line + 1
 
-      table.insert(lines, '---')
-      current_line = current_line + 1
+      -- Only render separator and cards if section is expanded
+      if not is_collapsed then
+        table.insert(lines, '---')
+        current_line = current_line + 1
+      end
 
-      -- Render each card
-      for _, card in ipairs(file_cards) do
+      -- Render each card (only if section is expanded)
+      if not is_collapsed then
+        for _, card in ipairs(file_cards) do
         -- Get card start line
         local card_start_line = current_line
 
@@ -392,7 +470,8 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
         for line_num = card_start_line, card_end_line do
           card_map[line_num] = card
         end
-      end
+        end
+      end -- End of if not is_collapsed
     end
   end
 
@@ -418,8 +497,8 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
   -- Apply highlighting for selected comment (TODO: update to use card-based highlighting)
   -- highlight_selected_comment(buf, diffview.selected_comment, card_map)
 
-  -- Setup keymaps
-  M.setup_keymaps(buf, on_comment_selected_callback, on_open_thread_callback)
+  -- Setup keymaps (pass comments and files for re-rendering on toggle)
+  M.setup_keymaps(buf, on_comment_selected_callback, on_open_thread_callback, comments, files)
 
   logger.info('comments_panel','Comments panel rendered', {
     total_comments = #filtered_comments,

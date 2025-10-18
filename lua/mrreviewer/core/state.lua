@@ -42,6 +42,7 @@ M._state = {
     highlight_timer = nil,
     filter_resolved = false,
     collapsed_dirs = {}, -- Track collapsed directory paths: {[dir_path] = true}
+    collapsed_sections = {}, -- Track collapsed file sections in comments panel: {[file_path] = true}
   },
 }
 

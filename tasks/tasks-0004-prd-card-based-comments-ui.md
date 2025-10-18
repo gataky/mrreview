@@ -5,8 +5,8 @@
 - `lua/mrreviewer/ui/highlights.lua` - Highlight groups, will need new groups for cards and selection states
 - `lua/mrreviewer/core/state.lua` - State management for tracking selected card and collapsed sections
 - `lua/mrreviewer/ui/comments/card_renderer.lua` - **[CREATED]** Card rendering module with complete implementation
-- `lua/mrreviewer/ui/diffview/comments_panel.lua` - **[MODIFIED]** Updated render() function to use card-based rendering
-- `lua/mrreviewer/ui/comments/card_navigator.lua` - **[CREATED]** Navigation module with function stubs for card-level navigation
+- `lua/mrreviewer/ui/diffview/comments_panel.lua` - **[MODIFIED]** Updated render(), keymaps, and get_comment_at_cursor() for card-based UI
+- `lua/mrreviewer/ui/comments/card_navigator.lua` - **[CREATED]** Complete navigation module with card and file section navigation
 
 ### Notes
 
@@ -38,7 +38,7 @@
   - [x] 2.7 Update `apply_highlighting()` to handle card-based structure (highlight entire cards, not individual lines)
   - [x] 2.8 Add special handling for cards with resolved status (dim entire card using dedicated highlight group)
 
-- [ ] 3.0 Implement card-level navigation system (Tab/Shift+Tab, ]f/[f)
+- [x] 3.0 Implement card-level navigation system (Tab/Shift+Tab, ]f/[f)
   - [x] 3.1 Create `lua/mrreviewer/ui/comments/card_navigator.lua` module for navigation logic
   - [x] 3.2 Implement `find_card_at_line()` to determine which card the cursor is currently in based on card_map
   - [x] 3.3 Implement `move_to_next_card()` to find next card and move cursor to its first line
