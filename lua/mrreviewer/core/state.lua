@@ -205,6 +205,7 @@ function M.clear_diffview()
   M._state.diffview.highlight_timer = nil
   M._state.diffview.filter_resolved = false
   M._state.diffview.collapsed_dirs = {}
+  M._state.diffview.collapsed_sections = {}
 end
 
 --- Clear all state
@@ -394,6 +395,7 @@ function M.reset()
       highlight_timer = nil,
       filter_resolved = false,
       collapsed_dirs = {},
+      collapsed_sections = {},
     },
   }
 end

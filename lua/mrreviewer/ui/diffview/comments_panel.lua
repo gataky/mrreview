@@ -275,6 +275,52 @@ function M.is_section_collapsed(file_path)
   return collapsed_sections[file_path] == true
 end
 
+--- Identify orphaned comments (comments without discussion_id or with orphaned discussion_id)
+--- Orphaned comments are those that:
+--- 1. Have no discussion_id (or it's empty)
+--- 2. Have a discussion_id but are the only comment in that thread
+--- @param comments table List of all comments
+--- @return table List of orphaned comment objects
+function M.identify_orphaned_comments(comments)
+  if not comments or #comments == 0 then
+    return {}
+  end
+
+  local orphaned = {}
+  local discussion_counts = {}
+
+  -- First pass: count comments per discussion_id
+  for _, comment in ipairs(comments) do
+    if comment.discussion_id and comment.discussion_id ~= '' then
+      discussion_counts[comment.discussion_id] = (discussion_counts[comment.discussion_id] or 0) + 1
+    end
+  end
+
+  -- Second pass: identify orphaned comments
+  for _, comment in ipairs(comments) do
+    local is_orphaned = false
+
+    -- Case 1: No discussion_id or empty discussion_id
+    if not comment.discussion_id or comment.discussion_id == '' then
+      is_orphaned = true
+    -- Case 2: Has discussion_id but it's the only comment in that discussion (orphaned thread)
+    elseif discussion_counts[comment.discussion_id] == 1 then
+      is_orphaned = true
+    end
+
+    if is_orphaned then
+      table.insert(orphaned, comment)
+    end
+  end
+
+  logger.debug('comments_panel', 'Identified orphaned comments', {
+    total_comments = #comments,
+    orphaned_count = #orphaned,
+  })
+
+  return orphaned
+end
+
 --- Toggle the collapsed state of a file section at cursor position
 --- @return boolean Success status
 function M.toggle_file_section()
@@ -475,6 +521,50 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
     end
   end
 
+  -- Identify and render orphaned comments section
+  local orphaned_comments = M.identify_orphaned_comments(filtered_comments)
+  if orphaned_comments and #orphaned_comments > 0 then
+    -- Add spacing before orphaned section
+    table.insert(lines, '')
+    current_line = current_line + 1
+
+    -- Add "Orphaned Comments" header
+    table.insert(lines, '')
+    current_line = current_line + 1
+    table.insert(lines, '⚠️  Orphaned Comments (' .. #orphaned_comments .. ' comments)')
+    current_line = current_line + 1
+    table.insert(lines, '---')
+    current_line = current_line + 1
+
+    -- Convert orphaned comments into cards
+    local orphaned_cards = card_renderer.group_comments_into_cards(orphaned_comments)
+
+    -- Render each orphaned card
+    for _, card in ipairs(orphaned_cards) do
+      -- Get card start line
+      local card_start_line = current_line
+
+      -- Render card with borders
+      local card_lines = card_renderer.render_card_with_borders(card)
+
+      -- Add card lines to buffer
+      for _, card_line in ipairs(card_lines) do
+        table.insert(lines, '  ' .. card_line) -- Indent cards slightly
+        current_line = current_line + 1
+      end
+
+      -- Add spacing between cards
+      table.insert(lines, '')
+      current_line = current_line + 1
+
+      -- Store card reference for this line range
+      local card_end_line = current_line - 1
+      for line_num = card_start_line, card_end_line do
+        card_map[line_num] = card
+      end
+    end
+  end
+
   -- Add empty line at the end
   table.insert(lines, '')
 
@@ -524,12 +614,22 @@ function M.apply_highlighting(buf, grouped, files)
   end
 
   for i, line in ipairs(lines) do
-    -- Highlight file headers (lines starting with 📁)
-    if line:match('^📁') then
+    -- Highlight file headers (lines starting with 📁 or ▼/▶ followed by 📁)
+    if line:match('^📁') or line:match('^[▼▶]%s*📁') then
       vim.api.nvim_buf_add_highlight(
         buf,
         ns_id,
         highlights.get_group('comment_file_header'),
+        i - 1,
+        0,
+        -1
+      )
+    -- Highlight orphaned comments header (lines starting with ⚠️)
+    elseif line:match('^⚠️') then
+      vim.api.nvim_buf_add_highlight(
+        buf,
+        ns_id,
+        'WarningMsg',
         i - 1,
         0,
         -1

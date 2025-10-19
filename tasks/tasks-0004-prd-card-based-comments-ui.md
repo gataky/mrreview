@@ -53,17 +53,17 @@
   - [x] 3.12 Ensure Enter key still works to jump to comment location in diff (should use first comment in card's thread)
 
 - [ ] 4.0 Add collapsible file sections and orphaned comments handling
-  - [ ] 4.1 Add `collapsed_sections` table to diffview state in `state.lua` to track which file sections are collapsed
-  - [ ] 4.2 Implement `is_section_collapsed()` helper in `comments_panel.lua` to check collapse state
-  - [ ] 4.3 Update file header rendering to show collapse indicator (e.g., "▼" expanded, "▶" collapsed)
-  - [ ] 4.4 Implement `toggle_file_section()` function to collapse/expand file section at cursor
-  - [ ] 4.5 When section is collapsed, render only the header with comment count, skip rendering cards
-  - [ ] 4.6 Add keymap (e.g., `za` or `<Space>`) to toggle file section collapse at cursor position
-  - [ ] 4.7 Implement `identify_orphaned_comments()` to find comments without `discussion_id` or with orphaned discussion_id
-  - [ ] 4.8 Create special "Orphaned Comments" section header rendered at the end of the buffer
-  - [ ] 4.9 Render orphaned comment cards under the "Orphaned Comments" section using same card rendering logic
-  - [ ] 4.10 Handle missing author information: replace nil/empty author with "unknown" in `format_card_header()`
-  - [ ] 4.11 Ensure file sections are expanded by default (collapsed_sections table starts empty)
+  - [x] 4.1 Add `collapsed_sections` table to diffview state in `state.lua` to track which file sections are collapsed
+  - [x] 4.2 Implement `is_section_collapsed()` helper in `comments_panel.lua` to check collapse state
+  - [x] 4.3 Update file header rendering to show collapse indicator (e.g., "▼" expanded, "▶" collapsed)
+  - [x] 4.4 Implement `toggle_file_section()` function to collapse/expand file section at cursor
+  - [x] 4.5 When section is collapsed, render only the header with comment count, skip rendering cards
+  - [x] 4.6 Add keymap (e.g., `za` or `<Space>`) to toggle file section collapse at cursor position
+  - [x] 4.7 Implement `identify_orphaned_comments()` to find comments without `discussion_id` or with orphaned discussion_id
+  - [x] 4.8 Create special "Orphaned Comments" section header rendered at the end of the buffer
+  - [x] 4.9 Render orphaned comment cards under the "Orphaned Comments" section using same card rendering logic
+  - [x] 4.10 Handle missing author information: replace nil/empty author with "unknown" in `format_card_header()`
+  - [x] 4.11 Ensure file sections are expanded by default (collapsed_sections table starts empty)
 
 - [ ] 5.0 Implement card selection persistence and visual feedback
   - [ ] 5.1 Add `selected_card_id` field to diffview state in `state.lua` to track currently selected card
