@@ -110,12 +110,20 @@ function M.setup_buffer_autocmds(buf)
   -- Create autocmd group for this buffer
   local group = vim.api.nvim_create_augroup('MRReviewerCommentsPanel_' .. buf, { clear = true })
 
+  -- Store original guicursor setting
+  local original_guicursor = vim.o.guicursor
+
   -- WinEnter: Restore cursor to selected card when entering comments buffer
   vim.api.nvim_create_autocmd('WinEnter', {
     group = group,
     buffer = buf,
     callback = function()
       local win = vim.api.nvim_get_current_win()
+      -- Hide cursor in this window
+      vim.o.guicursor = 'a:block-Cursor/lCursor'
+      vim.cmd('highlight Cursor blend=100')
+      vim.cmd('highlight lCursor blend=100')
+
       -- Use defer to ensure the buffer is fully loaded
       vim.defer_fn(function()
         if vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == buf then
@@ -132,6 +140,10 @@ function M.setup_buffer_autocmds(buf)
     buffer = buf,
     callback = function()
       M.save_selected_card(buf)
+      -- Restore cursor visibility
+      vim.o.guicursor = original_guicursor
+      vim.cmd('highlight Cursor blend=0')
+      vim.cmd('highlight lCursor blend=0')
     end,
   })
 
@@ -826,6 +838,9 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
   vim.api.nvim_buf_set_option(buf, 'signcolumn', 'no')
   vim.api.nvim_buf_set_option(buf, 'number', false)
   vim.api.nvim_buf_set_option(buf, 'relativenumber', false)
+
+  -- Disable cursorline highlighting
+  vim.api.nvim_buf_set_option(buf, 'cursorline', false)
 
   -- Store card map in buffer variable
   pcall(vim.api.nvim_buf_set_var, buf, 'mrreviewer_card_map', card_map)
