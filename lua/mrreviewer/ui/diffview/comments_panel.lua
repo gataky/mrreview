@@ -257,10 +257,21 @@ function M.setup_keymaps(buf, on_comment_selected_callback, on_open_thread_callb
 
   -- za to toggle file section collapse/expand
   vim.keymap.set('n', 'za', function()
+    logger.info('comments_panel', 'za keymap triggered')
     local success = M.toggle_file_section()
+    logger.info('comments_panel', 'toggle_file_section returned', { success = success })
     if success and comments and files then
+      logger.info('comments_panel', 'Re-rendering after toggle')
       -- Re-render to update the display
       M.render(comments, files, buf, on_comment_selected_callback, on_open_thread_callback)
+    else
+      if not success then
+        logger.warn('comments_panel', 'Toggle failed')
+      elseif not comments then
+        logger.warn('comments_panel', 'No comments available for re-render')
+      elseif not files then
+        logger.warn('comments_panel', 'No files available for re-render')
+      end
     end
   end, vim.tbl_extend('force', opts, { desc = 'Toggle file section collapse' }))
 
@@ -388,19 +399,36 @@ function M.toggle_file_section()
 
   local line = lines[1]
 
-  -- Check if this is a file header line (starts with ▼ or ▶ followed by 📁)
-  -- More flexible pattern to match variations in spacing and format
-  local file_path = line:match('^[▼▶]%s*📁%s+(.-)%s+%(')
+  logger.info('comments_panel', 'Attempting to toggle file section', {
+    line = line,
+    line_length = #line,
+    current_line_num = current_line,
+  })
+
+  -- Check if this is a file header line (contains 📁 emoji)
+  -- Lua patterns don't work well with multi-byte UTF-8 characters, so use string.find
+  local file_path = nil
+
+  if line:find("📁") then
+    -- Find the position after 📁 emoji
+    local folder_pos = line:find("📁")
+    if folder_pos then
+      -- Extract everything after the emoji (skipping emoji bytes)
+      local after_folder = line:sub(folder_pos + 4) -- 📁 is 4 bytes in UTF-8
+      -- Extract file path (everything before the opening paren)
+      file_path = after_folder:match("^%s*(.-)%s*%(")
+    end
+  end
 
   if not file_path then
-    logger.warn('comments_panel', 'Cursor not on a file header line', {
+    logger.warn('comments_panel', 'Cursor not on a file header line or could not extract path', {
       line = line,
-      line_length = #line,
+      has_folder_emoji = line:find("📁") ~= nil,
     })
     return false
   end
 
-  logger.debug('comments_panel', 'Matched file header', {
+  logger.info('comments_panel', 'Matched file header', {
     file_path = file_path,
     line = line,
   })
