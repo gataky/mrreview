@@ -1,9 +1,9 @@
--- lua/mrreviewer/commands.lua
+-- lua/mrreviewer/api/commands.lua
 -- Neovim command registration and handlers
 
 local M = {}
 local glab = require('mrreviewer.integrations.glab')
-local parsers = require('mrreviewer.lib.parsers')
+local parsers = require('mrreviewer.lib.parsers.gitlab')
 local project = require('mrreviewer.integrations.project')
 local utils = require('mrreviewer.lib.utils')
 local ui = require('mrreviewer.ui.ui')

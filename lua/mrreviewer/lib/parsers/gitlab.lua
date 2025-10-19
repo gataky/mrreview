@@ -1,5 +1,5 @@
--- lua/mrreviewer/parsers.lua
--- JSON parsers for MR data, comments, and position info
+-- lua/mrreviewer/lib/parsers/gitlab.lua
+-- JSON parsers for GitLab MR data, comments, and position info
 
 local M = {}
 local utils = require('mrreviewer.lib.utils')

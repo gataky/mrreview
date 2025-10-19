@@ -232,7 +232,7 @@ end
 
 ## Technical Considerations
 
-1. **Backward Compatibility**: All changes must maintain the same user-facing API
+1. **Backward Compatibility**: All changes can change any user facing API call
 2. **Dependencies**: Ensure plenary.nvim is properly documented as a required dependency
 3. **Migration Path**: Create migration guide for any breaking internal API changes
 4. **Performance Testing**: Benchmark before/after for rendering and navigation operations

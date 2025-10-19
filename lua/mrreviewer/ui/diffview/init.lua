@@ -12,7 +12,7 @@ local errors = require('mrreviewer.core.errors')
 local layout = require('mrreviewer.ui.diffview.layout')
 local file_panel = require('mrreviewer.ui.diffview.file_panel')
 local diff_panel = require('mrreviewer.ui.diffview.diff_panel')
-local comments_panel = require('mrreviewer.ui.diffview.comments_panel')
+local comments_panel = require('mrreviewer.ui.diffview.comments.panel')
 local navigation = require('mrreviewer.ui.diffview.navigation')
 
 -- Import utilities from existing diff view

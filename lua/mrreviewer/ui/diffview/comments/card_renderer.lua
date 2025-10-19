@@ -1,4 +1,4 @@
--- lua/mrreviewer/ui/comments/card_renderer.lua
+-- lua/mrreviewer/ui/diffview/comments/card_renderer.lua
 -- Card-based rendering logic for comments panel
 --
 -- This module transforms comments into visual card representations for display

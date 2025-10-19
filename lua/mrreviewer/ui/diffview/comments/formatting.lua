@@ -1,4 +1,4 @@
--- lua/mrreviewer/comments/formatting.lua
+-- lua/mrreviewer/ui/diffview/comments/formatting.lua
 -- Comment formatting utilities
 
 local M = {}

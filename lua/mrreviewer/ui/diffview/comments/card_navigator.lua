@@ -1,4 +1,4 @@
--- lua/mrreviewer/ui/comments/card_navigator.lua
+-- lua/mrreviewer/ui/diffview/comments/card_navigator.lua
 -- Card-level navigation logic for comments panel
 --
 -- This module handles navigation between comment cards in the comments panel.
@@ -97,7 +97,7 @@ function M.move_to_next_card(buf, win)
         diffview.selected_card_id = card.id
 
         -- Update visual highlighting
-        local comments_panel = require('mrreviewer.ui.diffview.comments_panel')
+        local comments_panel = require('mrreviewer.ui.diffview.comments.panel')
         comments_panel.highlight_selected_card(buf)
 
         logger.info('card_navigator', 'Moved to next card', {
@@ -121,7 +121,7 @@ function M.move_to_next_card(buf, win)
       diffview.selected_card_id = card.id
 
       -- Update visual highlighting
-      local comments_panel = require('mrreviewer.ui.diffview.comments_panel')
+      local comments_panel = require('mrreviewer.ui.diffview.comments.panel')
       comments_panel.highlight_selected_card(buf)
 
       logger.info('card_navigator', 'Wrapped to first card', {
@@ -206,7 +206,7 @@ function M.move_to_prev_card(buf, win)
         diffview.selected_card_id = card.id
 
         -- Update visual highlighting
-        local comments_panel = require('mrreviewer.ui.diffview.comments_panel')
+        local comments_panel = require('mrreviewer.ui.diffview.comments.panel')
         comments_panel.highlight_selected_card(buf)
 
         logger.info('card_navigator', 'Moved to previous card', {
@@ -241,7 +241,7 @@ function M.move_to_prev_card(buf, win)
       diffview.selected_card_id = card.id
 
       -- Update visual highlighting
-      local comments_panel = require('mrreviewer.ui.diffview.comments_panel')
+      local comments_panel = require('mrreviewer.ui.diffview.comments.panel')
       comments_panel.highlight_selected_card(buf)
 
       logger.info('card_navigator', 'Wrapped to last card', {

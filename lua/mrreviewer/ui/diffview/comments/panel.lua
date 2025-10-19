@@ -1,4 +1,4 @@
--- lua/mrreviewer/ui/diffview/comments_panel.lua
+-- lua/mrreviewer/ui/diffview/comments/panel.lua
 -- Comments panel with filtering and minimal formatting for diffview
 
 local M = {}
@@ -6,9 +6,9 @@ local state = require('mrreviewer.core.state')
 local config = require('mrreviewer.core.config')
 local logger = require('mrreviewer.core.logger')
 local highlights = require('mrreviewer.ui.highlights')
-local formatting = require('mrreviewer.ui.comments.formatting')
-local card_renderer = require('mrreviewer.ui.comments.card_renderer')
-local card_navigator = require('mrreviewer.ui.comments.card_navigator')
+local formatting = require('mrreviewer.ui.diffview.comments.formatting')
+local card_renderer = require('mrreviewer.ui.diffview.comments.card_renderer')
+local card_navigator = require('mrreviewer.ui.diffview.comments.card_navigator')
 
 --- Group comments by file, maintaining file tree order
 --- @param comments table List of all comments

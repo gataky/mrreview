@@ -1,12 +1,12 @@
--- lua/mrreviewer/comments/init.lua
+-- lua/mrreviewer/ui/comments/init.lua
 -- Comment fetching, parsing, and display logic
 
 local M = {}
 local utils = require('mrreviewer.lib.utils')
-local parsers = require('mrreviewer.lib.parsers')
+local parsers = require('mrreviewer.lib.parsers.gitlab')
 local highlights = require('mrreviewer.ui.highlights')
 local position = require('mrreviewer.lib.position')
-local formatting = require('mrreviewer.ui.comments.formatting')
+local formatting = require('mrreviewer.ui.diffview.comments.formatting')
 local state_module = require('mrreviewer.core.state')
 
 -- Expose comments state dynamically for backward compatibility
