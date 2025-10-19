@@ -28,7 +28,7 @@ local highlights = {
   MRReviewerUnresolvedComment = { fg = '#ff9e64' },
 
   -- Card-based UI highlights
-  MRReviewerCardSelected = { fg = '#ff9e64', bold = true, underline = true }, -- Highlighted selected card border (bright orange, bold + underline)
+  MRReviewerCardSelected = { fg = '#ff9e64', bold = true, underline = false }, -- Highlighted selected card border (bright orange, bold + underline)
   MRReviewerCardResolved = { fg = '#565f89', italic = true }, -- Dimmed resolved cards
   MRReviewerCardBorder = { fg = '#7aa2f7' }, -- Card border characters
 

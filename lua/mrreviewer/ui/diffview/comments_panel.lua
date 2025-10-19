@@ -595,19 +595,21 @@ function M.highlight_selected_card(buf)
   -- Get buffer lines to check for border characters
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
 
-  -- Apply highlight only to border lines of the selected card
+  -- Apply highlight only to border characters of the selected card
   -- Use string.find for UTF-8 box-drawing characters since Lua patterns don't handle them well
   for _, line_num in ipairs(card_lines) do
     local line = lines[line_num]
     if line then
-      -- Check if this is a border line (top/bottom with corners, not side with │)
-      -- Top border: ╭─────╮ or ┌─────┐
-      -- Bottom border: ╰─────╯ or └─────┘
-      -- Content line: │ text │ (should NOT be highlighted)
+      -- Check if this is a border line
+      -- Top border: ╭─────╮ or ┌─────┐ (highlight entire line)
+      -- Bottom border: ╰─────╯ or └─────┘ (highlight entire line)
+      -- Side borders: │ text │ (highlight only the │ characters, not content)
       local is_top_border = (line:find("╭") and line:find("╮")) or (line:find("┌") and line:find("┐"))
       local is_bottom_border = (line:find("╰") and line:find("╯")) or (line:find("└") and line:find("┘"))
+      local has_vertical_bars = line:find("│")
 
       if is_top_border or is_bottom_border then
+        -- Highlight the entire top/bottom border line
         vim.api.nvim_buf_add_highlight(
           buf,
           ns_id,
@@ -616,6 +618,35 @@ function M.highlight_selected_card(buf)
           0,
           -1
         )
+      elseif has_vertical_bars then
+        -- For content lines with vertical bars, highlight only the │ characters
+        -- Find positions of │ characters
+        local start_pos = line:find("│")
+        local end_pos = line:find("│[^│]*$") -- Find last │
+
+        if start_pos then
+          -- Highlight first │ (left border)
+          vim.api.nvim_buf_add_highlight(
+            buf,
+            ns_id,
+            highlights.get_group('card_selected'),
+            line_num - 1,
+            start_pos - 1,
+            start_pos + 2 -- │ is 3 bytes in UTF-8
+          )
+        end
+
+        if end_pos and end_pos ~= start_pos then
+          -- Highlight last │ (right border)
+          vim.api.nvim_buf_add_highlight(
+            buf,
+            ns_id,
+            highlights.get_group('card_selected'),
+            line_num - 1,
+            end_pos - 1,
+            end_pos + 2 -- │ is 3 bytes in UTF-8
+          )
+        end
       end
     end
   end
