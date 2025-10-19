@@ -584,18 +584,27 @@ function M.highlight_selected_card(buf)
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
 
   -- Apply highlight only to border lines of the selected card
+  -- Use string.find for UTF-8 box-drawing characters since Lua patterns don't handle them well
   for _, line_num in ipairs(card_lines) do
     local line = lines[line_num]
-    -- Check if this line is a border line (contains box-drawing characters)
-    if line and (line:match('^%s*[┌└╭╰]') or line:match('^%s*[─]+') or line:match('[┐┘╮╯]%s*$')) then
-      vim.api.nvim_buf_add_highlight(
-        buf,
-        ns_id,
-        highlights.get_group('card_selected'),
-        line_num - 1, -- Convert to 0-indexed
-        0,
-        -1
-      )
+    if line then
+      -- Check if this is a border line (top/bottom with corners, not side with │)
+      -- Top border: ╭─────╮ or ┌─────┐
+      -- Bottom border: ╰─────╯ or └─────┘
+      -- Content line: │ text │ (should NOT be highlighted)
+      local is_top_border = (line:find("╭") and line:find("╮")) or (line:find("┌") and line:find("┐"))
+      local is_bottom_border = (line:find("╰") and line:find("╯")) or (line:find("└") and line:find("┘"))
+
+      if is_top_border or is_bottom_border then
+        vim.api.nvim_buf_add_highlight(
+          buf,
+          ns_id,
+          highlights.get_group('card_selected'),
+          line_num - 1, -- Convert to 0-indexed
+          0,
+          -1
+        )
+      end
     end
   end
 
