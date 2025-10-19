@@ -260,8 +260,8 @@ function M.render_card_with_borders(card)
   -- Add padding (2 spaces on each side for the border characters)
   local content_width = max_width
 
-  -- Top border: ┌─────────┐
-  table.insert(lines, "┌" .. string.rep("─", content_width + 2) .. "┐")
+  -- Top border: ╭─────────╮ (rounded corners)
+  table.insert(lines, "╭" .. string.rep("─", content_width + 2) .. "╮")
 
   -- Header line: │ L10-100 @username │
   table.insert(lines, "│ " .. header .. string.rep(" ", content_width - #header) .. " │")
@@ -271,8 +271,8 @@ function M.render_card_with_borders(card)
     table.insert(lines, "│ " .. reply .. string.rep(" ", content_width - #reply) .. " │")
   end
 
-  -- Bottom border: └─────────┘
-  table.insert(lines, "└" .. string.rep("─", content_width + 2) .. "┘")
+  -- Bottom border: ╰─────────╯ (rounded corners)
+  table.insert(lines, "╰" .. string.rep("─", content_width + 2) .. "╯")
 
   return lines
 end

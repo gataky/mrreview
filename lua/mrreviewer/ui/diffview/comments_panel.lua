@@ -389,12 +389,21 @@ function M.toggle_file_section()
   local line = lines[1]
 
   -- Check if this is a file header line (starts with ▼ or ▶ followed by 📁)
-  local file_path = line:match('^[▼▶]%s*📁%s+(.-)%s+%(%d+%s+comments%)$')
+  -- More flexible pattern to match variations in spacing and format
+  local file_path = line:match('^[▼▶]%s*📁%s+(.-)%s+%(')
 
   if not file_path then
-    logger.debug('comments_panel', 'Cursor not on a file header line', { line = line })
+    logger.warn('comments_panel', 'Cursor not on a file header line', {
+      line = line,
+      line_length = #line,
+    })
     return false
   end
+
+  logger.debug('comments_panel', 'Matched file header', {
+    file_path = file_path,
+    line = line,
+  })
 
   -- Toggle the collapsed state in diffview state
   local diffview = state.get_diffview()
@@ -535,7 +544,7 @@ function M.highlight_selected_card(buf)
   local ns_id = vim.api.nvim_create_namespace('mrreviewer_selected_card')
   vim.api.nvim_buf_clear_namespace(buf, ns_id, 0, -1)
 
-  -- Find all lines belonging to the selected card and highlight them
+  -- Find all lines belonging to the selected card
   local card_lines = {}
   for line_num, card in pairs(card_map) do
     if card.id == selected_card_id then
@@ -543,16 +552,23 @@ function M.highlight_selected_card(buf)
     end
   end
 
-  -- Apply highlight to all lines of the selected card
+  -- Get buffer lines to check for border characters
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+
+  -- Apply highlight only to border lines of the selected card
   for _, line_num in ipairs(card_lines) do
-    vim.api.nvim_buf_add_highlight(
-      buf,
-      ns_id,
-      highlights.get_group('card_selected'),
-      line_num - 1, -- Convert to 0-indexed
-      0,
-      -1
-    )
+    local line = lines[line_num]
+    -- Check if this line is a border line (contains box-drawing characters)
+    if line and (line:match('^%s*[┌└╭╰]') or line:match('^%s*[─]+') or line:match('[┐┘╮╯]%s*$')) then
+      vim.api.nvim_buf_add_highlight(
+        buf,
+        ns_id,
+        highlights.get_group('card_selected'),
+        line_num - 1, -- Convert to 0-indexed
+        0,
+        -1
+      )
+    end
   end
 
   if #card_lines > 0 then
