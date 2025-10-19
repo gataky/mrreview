@@ -52,7 +52,7 @@
   - [x] 3.11 Update `get_comment_at_cursor()` to work with card_map (return the primary comment from the card)
   - [x] 3.12 Ensure Enter key still works to jump to comment location in diff (should use first comment in card's thread)
 
-- [ ] 4.0 Add collapsible file sections and orphaned comments handling
+- [x] 4.0 Add collapsible file sections and orphaned comments handling
   - [x] 4.1 Add `collapsed_sections` table to diffview state in `state.lua` to track which file sections are collapsed
   - [x] 4.2 Implement `is_section_collapsed()` helper in `comments_panel.lua` to check collapse state
   - [x] 4.3 Update file header rendering to show collapse indicator (e.g., "▼" expanded, "▶" collapsed)
@@ -65,14 +65,14 @@
   - [x] 4.10 Handle missing author information: replace nil/empty author with "unknown" in `format_card_header()`
   - [x] 4.11 Ensure file sections are expanded by default (collapsed_sections table starts empty)
 
-- [ ] 5.0 Implement card selection persistence and visual feedback
-  - [ ] 5.1 Add `selected_card_id` field to diffview state in `state.lua` to track currently selected card
-  - [ ] 5.2 Update `card_navigator.move_to_next_card()` to update `selected_card_id` in state when navigating
-  - [ ] 5.3 Update `card_navigator.move_to_prev_card()` to update `selected_card_id` in state when navigating
-  - [ ] 5.4 Add new highlight groups to `highlights.lua`: `MRReviewerCardSelected`, `MRReviewerCardResolved`, `MRReviewerCardBorder`
-  - [ ] 5.5 Implement `highlight_selected_card()` function to apply selection highlight to entire card (all lines)
-  - [ ] 5.6 Call `highlight_selected_card()` after rendering buffer and after navigation to update visual feedback
-  - [ ] 5.7 When switching from diff to comments buffer, read `selected_card_id` from state and move cursor to that card
-  - [ ] 5.8 When switching from comments to diff buffer, ensure `selected_card_id` is saved in state
-  - [ ] 5.9 Implement dimming for resolved cards: apply `MRReviewerCardResolved` highlight group to all lines of resolved cards
-  - [ ] 5.10 Test card selection persistence by navigating between diff and comments buffers multiple times
+- [x] 5.0 Implement card selection persistence and visual feedback
+  - [x] 5.1 Add `selected_card_id` field to diffview state in `state.lua` to track currently selected card
+  - [x] 5.2 Update `card_navigator.move_to_next_card()` to update `selected_card_id` in state when navigating
+  - [x] 5.3 Update `card_navigator.move_to_prev_card()` to update `selected_card_id` in state when navigating
+  - [x] 5.4 Add new highlight groups to `highlights.lua`: `MRReviewerCardSelected`, `MRReviewerCardResolved`, `MRReviewerCardBorder`
+  - [x] 5.5 Implement `highlight_selected_card()` function to apply selection highlight to entire card (all lines)
+  - [x] 5.6 Call `highlight_selected_card()` after rendering buffer and after navigation to update visual feedback
+  - [x] 5.7 When switching from diff to comments buffer, read `selected_card_id` from state and move cursor to that card
+  - [x] 5.8 When switching from comments to diff buffer, ensure `selected_card_id` is saved in state
+  - [x] 5.9 Implement dimming for resolved cards: apply `MRReviewerCardResolved` highlight group to all lines of resolved cards
+  - [x] 5.10 Test card selection persistence by navigating between diff and comments buffers multiple times

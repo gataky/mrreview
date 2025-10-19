@@ -99,6 +99,55 @@ function M.get_comment_at_cursor()
   return comment
 end
 
+--- Setup buffer autocmds for card selection persistence
+--- @param buf number Buffer ID
+function M.setup_buffer_autocmds(buf)
+  if not buf or not vim.api.nvim_buf_is_valid(buf) then
+    logger.warn('comments_panel', 'Invalid buffer for setup_buffer_autocmds')
+    return
+  end
+
+  -- Create autocmd group for this buffer
+  local group = vim.api.nvim_create_augroup('MRReviewerCommentsPanel_' .. buf, { clear = true })
+
+  -- WinEnter: Restore cursor to selected card when entering comments buffer
+  vim.api.nvim_create_autocmd('WinEnter', {
+    group = group,
+    buffer = buf,
+    callback = function()
+      local win = vim.api.nvim_get_current_win()
+      -- Use defer to ensure the buffer is fully loaded
+      vim.defer_fn(function()
+        if vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == buf then
+          M.restore_selected_card_position(buf, win)
+          M.highlight_selected_card(buf)
+        end
+      end, 10)
+    end,
+  })
+
+  -- WinLeave: Save current card selection when leaving comments buffer
+  vim.api.nvim_create_autocmd('WinLeave', {
+    group = group,
+    buffer = buf,
+    callback = function()
+      M.save_selected_card(buf)
+    end,
+  })
+
+  -- CursorMoved: Update selected_card_id as cursor moves within comments buffer
+  vim.api.nvim_create_autocmd('CursorMoved', {
+    group = group,
+    buffer = buf,
+    callback = function()
+      M.save_selected_card(buf)
+      M.highlight_selected_card(buf)
+    end,
+  })
+
+  logger.debug('comments_panel', 'Set up buffer autocmds for card selection persistence')
+end
+
 --- Setup keymaps for the comments panel buffer
 --- @param buf number Buffer ID
 --- @param on_comment_selected_callback function|nil Optional callback when comment is selected
@@ -367,6 +416,153 @@ function M.toggle_file_section()
   return true
 end
 
+--- Save the currently selected card when leaving comments buffer
+--- Updates selected_card_id in state based on cursor position
+--- @param buf number Buffer ID
+function M.save_selected_card(buf)
+  if not buf or not vim.api.nvim_buf_is_valid(buf) then
+    logger.debug('comments_panel', 'Invalid buffer for save_selected_card')
+    return
+  end
+
+  -- Get cursor position from any window showing this buffer
+  local windows = vim.fn.win_findbuf(buf)
+  if not windows or #windows == 0 then
+    logger.debug('comments_panel', 'No windows found for buffer')
+    return
+  end
+
+  local win = windows[1]
+  local cursor = vim.api.nvim_win_get_cursor(win)
+  local current_line = cursor[1]
+
+  -- Get card at current line
+  local ok, card_map = pcall(vim.api.nvim_buf_get_var, buf, 'mrreviewer_card_map')
+  if not ok or not card_map then
+    logger.debug('comments_panel', 'No card map found')
+    return
+  end
+
+  local card = card_map[current_line]
+  if card then
+    -- Update selected_card_id in state
+    local diffview = state.get_diffview()
+    diffview.selected_card_id = card.id
+    logger.debug('comments_panel', 'Saved selected card', {
+      card_id = card.id,
+      line = current_line,
+    })
+  end
+end
+
+--- Restore cursor position to selected card when entering comments buffer
+--- Reads selected_card_id from state and moves cursor to that card
+--- @param buf number Buffer ID
+--- @param win number Window ID
+function M.restore_selected_card_position(buf, win)
+  if not buf or not vim.api.nvim_buf_is_valid(buf) then
+    logger.warn('comments_panel', 'Invalid buffer for restore_selected_card_position')
+    return
+  end
+
+  if not win or not vim.api.nvim_win_is_valid(win) then
+    logger.warn('comments_panel', 'Invalid window for restore_selected_card_position')
+    return
+  end
+
+  -- Get selected_card_id from state
+  local diffview = state.get_diffview()
+  local selected_card_id = diffview.selected_card_id
+
+  if not selected_card_id then
+    logger.debug('comments_panel', 'No selected_card_id in state to restore')
+    return
+  end
+
+  -- Get card map from buffer
+  local ok, card_map = pcall(vim.api.nvim_buf_get_var, buf, 'mrreviewer_card_map')
+  if not ok or not card_map then
+    logger.debug('comments_panel', 'No card map found in buffer')
+    return
+  end
+
+  -- Find the first line of the selected card
+  local card_start_line = nil
+  for line_num, card in pairs(card_map) do
+    if card.id == selected_card_id then
+      if not card_start_line or line_num < card_start_line then
+        card_start_line = line_num
+      end
+    end
+  end
+
+  -- Move cursor to the card if found
+  if card_start_line then
+    vim.api.nvim_win_set_cursor(win, { card_start_line, 0 })
+    logger.info('comments_panel', 'Restored cursor to selected card', {
+      card_id = selected_card_id,
+      line = card_start_line,
+    })
+  end
+end
+
+--- Highlight the currently selected card based on selected_card_id in state
+--- Applies highlight to all lines of the selected card
+--- @param buf number Buffer ID
+function M.highlight_selected_card(buf)
+  if not buf or not vim.api.nvim_buf_is_valid(buf) then
+    logger.warn('comments_panel', 'Invalid buffer for highlight_selected_card')
+    return
+  end
+
+  -- Get selected_card_id from state
+  local diffview = state.get_diffview()
+  local selected_card_id = diffview.selected_card_id
+
+  if not selected_card_id then
+    logger.debug('comments_panel', 'No selected_card_id in state')
+    return
+  end
+
+  -- Get card map from buffer
+  local ok, card_map = pcall(vim.api.nvim_buf_get_var, buf, 'mrreviewer_card_map')
+  if not ok or not card_map then
+    logger.debug('comments_panel', 'No card map found in buffer')
+    return
+  end
+
+  -- Create namespace for selected card highlighting
+  local ns_id = vim.api.nvim_create_namespace('mrreviewer_selected_card')
+  vim.api.nvim_buf_clear_namespace(buf, ns_id, 0, -1)
+
+  -- Find all lines belonging to the selected card and highlight them
+  local card_lines = {}
+  for line_num, card in pairs(card_map) do
+    if card.id == selected_card_id then
+      table.insert(card_lines, line_num)
+    end
+  end
+
+  -- Apply highlight to all lines of the selected card
+  for _, line_num in ipairs(card_lines) do
+    vim.api.nvim_buf_add_highlight(
+      buf,
+      ns_id,
+      highlights.get_group('card_selected'),
+      line_num - 1, -- Convert to 0-indexed
+      0,
+      -1
+    )
+  end
+
+  if #card_lines > 0 then
+    logger.debug('comments_panel', 'Highlighted selected card', {
+      card_id = selected_card_id,
+      line_count = #card_lines,
+    })
+  end
+end
+
 --- Apply highlighting to the currently selected comment
 --- @param buf number Buffer ID
 --- @param selected_comment table|nil Currently selected comment
@@ -584,8 +780,11 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
   -- Apply syntax highlighting
   M.apply_highlighting(buf, grouped, files)
 
-  -- Apply highlighting for selected comment (TODO: update to use card-based highlighting)
-  -- highlight_selected_comment(buf, diffview.selected_comment, card_map)
+  -- Apply highlighting for selected card
+  M.highlight_selected_card(buf)
+
+  -- Setup buffer autocmds for card selection persistence
+  M.setup_buffer_autocmds(buf)
 
   -- Setup keymaps (pass comments and files for re-rendering on toggle)
   M.setup_keymaps(buf, on_comment_selected_callback, on_open_thread_callback, comments, files)

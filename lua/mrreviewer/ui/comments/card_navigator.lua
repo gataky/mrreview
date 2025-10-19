@@ -7,6 +7,7 @@
 
 local M = {}
 local logger = require('mrreviewer.core.logger')
+local state = require('mrreviewer.core.state')
 
 --- Find the card at the current cursor line
 --- @param buf number Buffer ID
@@ -90,6 +91,15 @@ function M.move_to_next_card(buf, win)
       if not current_card or card.id ~= current_card.id then
         -- Move cursor to the first line of this card
         vim.api.nvim_win_set_cursor(win, { line, 0 })
+
+        -- Update selected_card_id in state for persistence
+        local diffview = state.get_diffview()
+        diffview.selected_card_id = card.id
+
+        -- Update visual highlighting
+        local comments_panel = require('mrreviewer.ui.diffview.comments_panel')
+        comments_panel.highlight_selected_card(buf)
+
         logger.info('card_navigator', 'Moved to next card', {
           from_line = current_line,
           to_line = line,
@@ -105,6 +115,15 @@ function M.move_to_next_card(buf, win)
     local card = card_map[line]
     if card then
       vim.api.nvim_win_set_cursor(win, { line, 0 })
+
+      -- Update selected_card_id in state for persistence
+      local diffview = state.get_diffview()
+      diffview.selected_card_id = card.id
+
+      -- Update visual highlighting
+      local comments_panel = require('mrreviewer.ui.diffview.comments_panel')
+      comments_panel.highlight_selected_card(buf)
+
       logger.info('card_navigator', 'Wrapped to first card', {
         from_line = current_line,
         to_line = line,
@@ -181,6 +200,15 @@ function M.move_to_prev_card(buf, win)
 
         -- Move cursor to the first line of this card
         vim.api.nvim_win_set_cursor(win, { card_start_line, 0 })
+
+        -- Update selected_card_id in state for persistence
+        local diffview = state.get_diffview()
+        diffview.selected_card_id = card.id
+
+        -- Update visual highlighting
+        local comments_panel = require('mrreviewer.ui.diffview.comments_panel')
+        comments_panel.highlight_selected_card(buf)
+
         logger.info('card_navigator', 'Moved to previous card', {
           from_line = current_line,
           to_line = card_start_line,
@@ -207,6 +235,15 @@ function M.move_to_prev_card(buf, win)
       end
 
       vim.api.nvim_win_set_cursor(win, { card_start_line, 0 })
+
+      -- Update selected_card_id in state for persistence
+      local diffview = state.get_diffview()
+      diffview.selected_card_id = card.id
+
+      -- Update visual highlighting
+      local comments_panel = require('mrreviewer.ui.diffview.comments_panel')
+      comments_panel.highlight_selected_card(buf)
+
       logger.info('card_navigator', 'Wrapped to last card', {
         from_line = current_line,
         to_line = card_start_line,

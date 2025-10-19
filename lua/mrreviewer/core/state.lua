@@ -39,6 +39,7 @@ M._state = {
     panel_windows = {},
     selected_file = nil,
     selected_comment = nil,
+    selected_card_id = nil, -- Track currently selected card ID for persistence across buffer switches
     highlight_timer = nil,
     filter_resolved = false,
     collapsed_dirs = {}, -- Track collapsed directory paths: {[dir_path] = true}
@@ -202,6 +203,7 @@ function M.clear_diffview()
   M._state.diffview.panel_windows = {}
   M._state.diffview.selected_file = nil
   M._state.diffview.selected_comment = nil
+  M._state.diffview.selected_card_id = nil
   M._state.diffview.highlight_timer = nil
   M._state.diffview.filter_resolved = false
   M._state.diffview.collapsed_dirs = {}
@@ -392,6 +394,7 @@ function M.reset()
       panel_windows = {},
       selected_file = nil,
       selected_comment = nil,
+      selected_card_id = nil,
       highlight_timer = nil,
       filter_resolved = false,
       collapsed_dirs = {},

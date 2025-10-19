@@ -27,6 +27,11 @@ local highlights = {
   MRReviewerResolvedComment = { fg = '#565f89', italic = true },
   MRReviewerUnresolvedComment = { fg = '#ff9e64' },
 
+  -- Card-based UI highlights
+  MRReviewerCardSelected = { bg = '#3d59a1', bold = true }, -- Highlighted selected card
+  MRReviewerCardResolved = { fg = '#565f89', italic = true }, -- Dimmed resolved cards
+  MRReviewerCardBorder = { fg = '#7aa2f7' }, -- Card border characters
+
   -- Sign column indicators
   MRReviewerSignComment = { fg = '#7aa2f7', bold = true },
   MRReviewerSignCommentResolved = { fg = '#565f89' },
@@ -111,6 +116,10 @@ function M.get_group(element)
     file_name = 'MRReviewerFileName',
     file_sign = 'MRReviewerFileSign',
     tree_indent = 'MRReviewerTreeIndent',
+    -- Card highlights
+    card_selected = 'MRReviewerCardSelected',
+    card_resolved = 'MRReviewerCardResolved',
+    card_border = 'MRReviewerCardBorder',
   }
 
   return group_map[element] or 'Normal'
