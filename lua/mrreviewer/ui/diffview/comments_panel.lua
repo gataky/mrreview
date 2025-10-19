@@ -813,50 +813,6 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
     end
   end
 
-  -- Identify and render orphaned comments section
-  local orphaned_comments = M.identify_orphaned_comments(filtered_comments)
-  if orphaned_comments and #orphaned_comments > 0 then
-    -- Add spacing before orphaned section
-    table.insert(lines, '')
-    current_line = current_line + 1
-
-    -- Add "Orphaned Comments" header
-    table.insert(lines, '')
-    current_line = current_line + 1
-    table.insert(lines, '⚠️  Orphaned Comments (' .. #orphaned_comments .. ' comments)')
-    current_line = current_line + 1
-    table.insert(lines, '---')
-    current_line = current_line + 1
-
-    -- Convert orphaned comments into cards
-    local orphaned_cards = card_renderer.group_comments_into_cards(orphaned_comments)
-
-    -- Render each orphaned card
-    for _, card in ipairs(orphaned_cards) do
-      -- Get card start line
-      local card_start_line = current_line
-
-      -- Render card with borders
-      local card_lines = card_renderer.render_card_with_borders(card)
-
-      -- Add card lines to buffer
-      for _, card_line in ipairs(card_lines) do
-        table.insert(lines, '  ' .. card_line) -- Indent cards slightly
-        current_line = current_line + 1
-      end
-
-      -- Add spacing between cards
-      table.insert(lines, '')
-      current_line = current_line + 1
-
-      -- Store card reference for this line range
-      local card_end_line = current_line - 1
-      for line_num = card_start_line, card_end_line do
-        card_map[line_num] = card
-      end
-    end
-  end
-
   -- Add empty line at the end
   table.insert(lines, '')
 
@@ -918,16 +874,6 @@ function M.apply_highlighting(buf, grouped, files)
         buf,
         ns_id,
         highlights.get_group('comment_file_header'),
-        i - 1,
-        0,
-        -1
-      )
-    -- Highlight orphaned comments header (lines starting with ⚠️)
-    elseif line:match('^⚠️') then
-      vim.api.nvim_buf_add_highlight(
-        buf,
-        ns_id,
-        'WarningMsg',
         i - 1,
         0,
         -1
