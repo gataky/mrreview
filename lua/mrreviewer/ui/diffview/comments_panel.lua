@@ -799,12 +799,8 @@ function M.render(comments, files, buf, on_comment_selected_callback, on_open_th
           current_line = current_line + 1
         end
 
-        -- Add spacing between cards
-        table.insert(lines, '')
-        current_line = current_line + 1
-
         -- Store card reference for this line range
-        local card_end_line = current_line - 1
+        local card_end_line = current_line
         for line_num = card_start_line, card_end_line do
           card_map[line_num] = card
         end
